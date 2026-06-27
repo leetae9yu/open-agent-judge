@@ -1,10 +1,41 @@
 # Open Agent Judge (OAJ)
 
-> **Model is not all. Evaluate your harness.**
+<p align="center">
+  <strong>Model is not all. Evaluate your harness.</strong>
+</p>
 
-Open Agent Judge is an open-source judge for evaluating AI coding-agent pull requests with hidden tests, sandboxed execution, reproducible evidence, and public-safe reporting.
+<p align="center">
+  <a href="https://github.com/leetae9yu/open-agent-judge/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+  <img alt="Node >= 22.6.0" src="https://img.shields.io/badge/node-%3E%3D22.6.0-339933.svg">
+  <img alt="Status: public preview" src="https://img.shields.io/badge/status-public_preview-6f42c1.svg">
+  <img alt="Judge mode: fail closed" src="https://img.shields.io/badge/judge-fail--closed-black.svg">
+</p>
+
+<p align="center">
+  <strong>Open-source infrastructure for judging AI coding-agent pull requests with hidden tests, sandboxed execution, reproducible evidence, and public-safe reporting.</strong>
+</p>
 
 Most AI benchmark talk stops at the model. OAJ focuses on the rest of the system: the patch format, the harness, the oracle boundary, the sandbox, the rerun evidence, the public report, and the workflow that decides whether a result is trustworthy.
+
+```text
+agent patch  ->  envelope validation  ->  sandboxed judge  ->  independent rerun
+           ->  evidence ledger       ->  reviewer gate    ->  sanitized public report
+```
+
+| What OAJ protects | How |
+|---|---|
+| Public oracle leakage | Demo fixtures stay demo-only; scored claims require private/generated oracle metadata. |
+| Harness tampering | PRs provide data only; trusted judge code validates patch targets, hashes, stats, modes, and head SHA. |
+| Fake evidence | Public promotion requires Docker-scored original and rerun evidence with distinct ids and hashes. |
+| Public data leaks | Summaries reject raw patches, stdout/stderr, oracle details, bundles, credentials, and private paths. |
+
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#demo-fixtures-versus-scored-benchmark-operation">Scored operation</a> ·
+  <a href="#docker-image-provenance-and-sandboxing">Sandboxing</a> ·
+  <a href="#github-pr-submission-and-pages-deployment">PR judging</a> ·
+  <a href="#roadmap">Roadmap</a>
+</p>
 
 ## Why OAJ exists
 
