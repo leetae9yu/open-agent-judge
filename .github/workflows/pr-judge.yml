@@ -1,0 +1,90 @@
+name: AgentOJ PR Judge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.agentoj/submission.json'
+      - '.agentoj/submission.patch'
+      - '.github/workflows/pr-judge.yml'
+      - 'src/**'
+      - 'tests/**'
+      - 'fixtures/**'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+    inputs:
+      pr_head_sha:
+        description: 'Trusted PR head SHA for maintainer-triggered secret-backed reruns'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agentoj-pr-judge-${{ github.event.pull_request.number || inputs.pr_head_sha }}
+  cancel-in-progress: true
+
+jobs:
+  judge:
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted judge code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+
+      - name: Checkout PR submission files only
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || inputs.pr_head_sha }}
+          path: pr-submission
+          sparse-checkout: .agentoj
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+
+      - name: Install trusted dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Require docker sandbox for untrusted judging
+        run: docker version
+
+      - name: Smoke test Docker sandbox against trusted fixture
+        env:
+          AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON: '{"problemId":"humaneval-001","cases":[{"id":"private-smoke-case","args":[[1]],"expected":1}]}'
+        run: |
+          node --experimental-strip-types src/cli.ts run humaneval-001 \
+            --patch .github/agentoj-smoke/humaneval-001-pass.diff \
+            --sandbox docker
+
+      - name: Judge sanitized PR submission with trusted code
+        env:
+          AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON: ${{ secrets.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON }}
+        run: |
+          mkdir -p artifacts
+          test -f pr-submission/.agentoj/submission.json
+          test -f pr-submission/.agentoj/submission.patch
+          node --experimental-strip-types src/cli.ts judge-pr-submission \
+            --submission pr-submission/.agentoj/submission.json \
+            --patch pr-submission/.agentoj/submission.patch \
+            --summary-out artifacts/pr-judge-summary.json \
+            --expected-pr-head-sha ${{ github.event.pull_request.head.sha || inputs.pr_head_sha }} \
+            --sandbox docker
+
+      - name: Upload sanitized judge summary only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: agentoj-pr-judge-summary
+          path: artifacts/pr-judge-summary.json
+          if-no-files-found: error
+          retention-days: 7
