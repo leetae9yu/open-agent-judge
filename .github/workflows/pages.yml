@@ -21,15 +21,15 @@ concurrency:
   group: agentoj-pages
   cancel-in-progress: false
 
-environment:
-  name: github-pages
-  url: ${{ steps.deployment.outputs.page_url }}
 
 jobs:
   publish:
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout protected source
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5

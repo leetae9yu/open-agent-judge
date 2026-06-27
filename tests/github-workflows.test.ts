@@ -182,7 +182,7 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.equal(permissions.get("id-token"), "write");
     assert.equal(permissions.has("issues"), false);
     assert.equal(permissions.has("pull-requests"), false);
-    assert.match(pages, /environment:\n  name: github-pages/);
+    assert.match(pages, /environment:\n      name: github-pages/);
     assert.match(pages, /if: \$\{\{ github\.ref == 'refs\/heads\/main' \}\}/);
     assert.match(pages, /ref: main/);
     assert.match(pages, /export-web-data --out web\/data/);
