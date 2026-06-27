@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/leetae9yu/open-agent-judge/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-  <img alt="Node >= 22.6.0" src="https://img.shields.io/badge/node-%3E%3D22.6.0-339933.svg">
+  <img alt="Node 22.6+" src="https://img.shields.io/badge/node-22.6%2B-339933.svg">
   <img alt="Status: public preview" src="https://img.shields.io/badge/status-public_preview-6f42c1.svg">
   <img alt="Judge mode: fail closed" src="https://img.shields.io/badge/judge-fail--closed-black.svg">
 </p>
