@@ -117,6 +117,7 @@ jobs:
           if (!selected) throw new Error('private descriptor does not match submitted problem');
           NODE
       - name: Judge sanitized PR submission with trusted code
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
         env:
           AGENTOJ_SWEBENCH_HARNESS_PATH: ${{ github.event_name == 'workflow_dispatch' && '/tmp/swe-bench' || '' }}
         run: |

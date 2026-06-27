@@ -106,6 +106,7 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.match(judge, /persist-credentials: false/);
     assert.match(judge, /docker version/);
     assert.match(judge, /judge-pr-submission/);
+    assert.match(judge, /continue-on-error: \$\{\{ github\.event_name == 'pull_request' \}\}/);
     assert.match(judge, /--sandbox docker/);
     assert.match(judge, /Smoke test Docker sandbox against trusted fixture/);
     assert.equal(judge.includes("npm ci"), existsSync("package-lock.json"));
