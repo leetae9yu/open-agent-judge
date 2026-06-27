@@ -111,7 +111,7 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.equal(judge.includes("npm ci"), existsSync("package-lock.json"));
     assert.match(judge, /\.github\/agentoj-smoke\/humaneval-001-pass\.diff/);
     assert.match(judge, /AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON/);
-    assert.match(judge, /"cases":\[\{"id":"private-smoke-case","args":\[\[1\]\],"expected":1\}\]/);
+    assert.doesNotMatch(judge, /"cases":\[\{"id":"private-smoke-case","args":\[\[1\]\],"expected":1\}\]/);
     assert.match(judge, /secrets\.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON/);
     assert.doesNotMatch(judge, /AGENTOJ_QUIXBUGS_PRIVATE_DESCRIPTOR_BUNDLE_JSON/);
     assert.doesNotMatch(judge, /--test-name-pattern "validates QuixBugs private descriptor bundles"/);

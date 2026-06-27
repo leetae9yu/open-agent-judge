@@ -63,8 +63,6 @@ jobs:
         run: docker version
 
       - name: Smoke test Docker sandbox against trusted fixture
-        env:
-          AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON: '{"problemId":"humaneval-001","cases":[{"id":"private-smoke-case","args":[[1]],"expected":1}]}'
         run: |
           node --experimental-strip-types src/cli.ts run humaneval-001 \
             --patch .github/agentoj-smoke/humaneval-001-pass.diff \
