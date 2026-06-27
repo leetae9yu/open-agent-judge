@@ -538,7 +538,7 @@ interface PrivateOracleDescriptor {
   cases: HiddenOracleCase[];
 }
 
-function privateOracleDescriptorText(): string {
+function rawPrivateOracleDescriptorText(): string {
   const inline = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
   if (inline && inline.trim().length > 0) return inline;
   const descriptorPath = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH;
@@ -548,6 +548,47 @@ function privateOracleDescriptorText(): string {
       code: "runner.privateOracle.required",
       message: "Scored hidden-oracle execution requires AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON or AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH.",
     },
+  ]);
+}
+
+function canonicalPrivateOracleDescriptor(problemId: string, value: unknown): string | null {
+  const descriptor = value as { problemId?: unknown; cases?: unknown };
+  if (descriptor?.problemId !== undefined && descriptor.problemId !== problemId) return null;
+  if (!Array.isArray(descriptor?.cases) || descriptor.cases.length === 0) return null;
+  return JSON.stringify({ problemId, cases: descriptor.cases });
+}
+
+function privateOracleDescriptorText(problem: Problem): string {
+  const raw = rawPrivateOracleDescriptorText();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new ContractViolation("private oracle descriptor invalid", [
+      { code: "runner.privateOracle.invalidJson", message: "Private oracle descriptor must be valid JSON." },
+    ]);
+  }
+
+  const direct = canonicalPrivateOracleDescriptor(problem.id, parsed);
+  if (direct) return direct;
+
+  const bundle = parsed as { descriptors?: unknown; problems?: unknown };
+  if (Array.isArray(bundle.descriptors)) {
+    for (const entry of bundle.descriptors) {
+      const selected = canonicalPrivateOracleDescriptor(problem.id, entry);
+      if (selected) return selected;
+    }
+  }
+  if (bundle.problems && typeof bundle.problems === "object" && !Array.isArray(bundle.problems)) {
+    const selected = (bundle.problems as Record<string, unknown>)[problem.id];
+    if (selected !== undefined) {
+      const canonical = canonicalPrivateOracleDescriptor(problem.id, selected);
+      if (canonical) return canonical;
+    }
+  }
+
+  throw new ContractViolation("private oracle descriptor invalid", [
+    { code: "runner.privateOracle.invalidShape", message: "Private oracle descriptor must target the problem and include non-empty cases." },
   ]);
 }
 
@@ -574,7 +615,7 @@ function assertScoredHiddenOracleProblem(problem: Problem): string {
 
 function parsePrivateOracleDescriptor(problem: Problem): HiddenOracleCase[] {
   const expectedHash = assertScoredHiddenOracleProblem(problem);
-  const descriptorText = privateOracleDescriptorText();
+  const descriptorText = privateOracleDescriptorText(problem);
   const actualHash = `sha256:${sha256(descriptorText)}`;
   if (actualHash !== expectedHash) {
     throw new ContractViolation("private oracle descriptor mismatch", [

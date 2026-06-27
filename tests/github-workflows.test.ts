@@ -144,7 +144,7 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.match(report, /workflows: \[AgentOJ PR Judge\]/);
     assert.doesNotMatch(report, /pull_request_target/);
     assert.equal(permissions.get("actions"), "read");
-    assert.equal(permissions.get("contents"), "read");
+    assert.equal(permissions.get("contents"), "write");
     assert.equal(permissions.has("pull-requests"), false);
     assert.equal(permissions.get("issues"), "write");
     assert.equal(permissions.has("pages"), false);
@@ -154,11 +154,16 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.match(report, /validateSanitizedPrJudgeSummary/);
     assert.match(report, /escapeMarkdown/);
     assert.match(report, /validationMessages\.map\(\(message\) => `- \$\{escapeMarkdown\(message\)\}`\)/);
+    assert.match(report, /Publish passed result to static leaderboard/);
+    assert.match(report, /web\/data\/leaderboard\.json/);
+    assert.match(report, /summary\.status !== 'passed'/);
     assertPinnedActions(report);
 
     const validateIndex = report.indexOf("Validate sanitized summary schema");
     const commentIndex = report.indexOf("Comment sanitized result on PR");
+    const leaderboardIndex = report.indexOf("Publish passed result to static leaderboard");
     assert.ok(validateIndex > 0, "validator step should exist");
+    assert.ok(leaderboardIndex > validateIndex, "leaderboard update must occur after validator step");
     assert.ok(commentIndex > validateIndex, "comment step must occur after validator step");
   });
 

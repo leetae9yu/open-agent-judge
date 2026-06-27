@@ -277,17 +277,44 @@ function privateOracleDescriptorJson(): string | null {
   return null;
 }
 
+function canonicalProblemDescriptor(problemId: string, value: unknown): string | null {
+  const descriptor = value as { problemId?: unknown; cases?: unknown };
+  if (descriptor?.problemId !== undefined && descriptor.problemId !== problemId) return null;
+  if (!Array.isArray(descriptor?.cases) || descriptor.cases.length === 0) return null;
+  return JSON.stringify({ problemId, cases: descriptor.cases });
+}
+
+function privateOracleDescriptorFor(problemId: string): string | null {
+  const raw = privateOracleDescriptorJson();
+  if (!raw) return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+
+  const direct = canonicalProblemDescriptor(problemId, parsed);
+  if (direct) return direct;
+
+  const bundle = parsed as { descriptors?: unknown; problems?: unknown };
+  if (Array.isArray(bundle.descriptors)) {
+    for (const entry of bundle.descriptors) {
+      const selected = canonicalProblemDescriptor(problemId, entry);
+      if (selected) return selected;
+    }
+  }
+  if (bundle.problems && typeof bundle.problems === "object" && !Array.isArray(bundle.problems)) {
+    const selected = (bundle.problems as Record<string, unknown>)[problemId];
+    if (selected !== undefined) return canonicalProblemDescriptor(problemId, selected);
+  }
+  return null;
+}
+
 function withRuntimePrivateOracle(problem: ReturnType<typeof listImplementedProblems>[number]) {
   if (hasValidScoredOracleMetadata(problem)) return problem;
-  const descriptor = privateOracleDescriptorJson();
+  const descriptor = privateOracleDescriptorFor(problem.id);
   if (!descriptor) return problem;
-  let parsed: { problemId?: unknown } = {};
-  try {
-    parsed = JSON.parse(descriptor) as { problemId?: unknown };
-  } catch {
-    return problem;
-  }
-  if (parsed.problemId !== problem.id) return problem;
   return {
     ...problem,
     scoringMode: "scored-hidden" as const,

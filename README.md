@@ -219,6 +219,49 @@ The public judge is intentionally conservative:
 - **Hidden-oracle gate**: scored benchmark claims require `scoringMode: "scored-hidden"` with private/generated oracle metadata, an opaque oracle descriptor hash, and distinct original/rerun evidence identifiers. Demo-public fixtures are excluded from scored claims.
 - **Release redaction gate**: public DTOs, PR comments, Pages data, recording markdown, and MCP output must reject raw patches, stdout/stderr, temp paths, oracle paths/cases, result bundles, container/API-origin details, token bundles, credential URLs, cloud keys, JWTs, PEM/private keys, and markdown/HTML-obfuscated secrets.
 
+## Running a real scored benchmark
+
+For a live benchmark, configure hidden tests as a GitHub Actions secret. This is not an oracle server; it is a private JSON descriptor read only by the trusted judge workflow.
+
+Single-problem descriptor:
+
+```json
+{
+  "problemId": "humaneval-001",
+  "cases": [
+    { "id": "case-1", "args": [[9, 8, 7]], "expected": 9 },
+    { "id": "case-2", "args": [["a", "b"]], "expected": "a" }
+  ]
+}
+```
+
+Multi-problem descriptor bundle:
+
+```json
+{
+  "descriptors": [
+    {
+      "problemId": "humaneval-001",
+      "cases": [{ "id": "first-int", "args": [[9, 8, 7]], "expected": 9 }]
+    },
+    {
+      "problemId": "mbpp-001-adapter-only",
+      "cases": [{ "id": "upper", "args": ["abc"], "expected": "ABC" }]
+    }
+  ]
+}
+```
+
+Set it with:
+
+```bash
+gh secret set AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON \
+  --repo leetae9yu/open-agent-judge \
+  --body '<descriptor-json>'
+```
+
+When a PR judge summary passes hidden-oracle scoring, the trusted report workflow validates the sanitized artifact and updates `web/data/leaderboard.json`. The Pages workflow then republishes the static leaderboard. Missing or mismatched descriptors fail closed instead of creating a fake score.
+
 ## Low-cost optional API mode
 
 Keep GitHub Pages as the public frontend and run the SQLite-backed API only for local/private demos or a separately approved production BFF path:

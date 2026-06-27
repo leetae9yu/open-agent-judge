@@ -12,7 +12,7 @@ on:
 
 permissions:
   actions: read
-  contents: read
+  contents: write
   issues: write
 
 jobs:
@@ -67,6 +67,48 @@ jobs:
           if (JSON.stringify(summary).length > 65536) throw new Error('summary json is oversized');
           console.log(JSON.stringify({ ok: true, status: summary.status, passFail: summary.passFail }));
           NODE
+
+      - name: Publish passed result to static leaderboard
+        if: ${{ github.event.workflow_run.conclusion == 'success' || inputs.run_id }}
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
+        with:
+          script: |
+            const fs = require('node:fs');
+            const summary = JSON.parse(fs.readFileSync('artifacts/report/pr-judge-summary.json', 'utf8'));
+            if (summary.status !== 'passed' || summary.passFail !== 'pass') {
+              core.info(`Skipping leaderboard update for status=${summary.status}`);
+              return;
+            }
+
+            const { owner, repo } = context.repo;
+            const path = 'web/data/leaderboard.json';
+            const current = await github.rest.repos.getContent({ owner, repo, path, ref: 'main' });
+            if (Array.isArray(current.data)) throw new Error('leaderboard path resolved to a directory');
+            const rows = JSON.parse(Buffer.from(current.data.content, current.data.encoding).toString('utf8'));
+            if (!Array.isArray(rows)) throw new Error('leaderboard json must be an array');
+
+            const entry = {
+              id: summary.resultHash,
+              problemId: summary.problemId,
+              submissionId: summary.submissionId,
+              passFail: summary.passFail,
+              runtimeMs: Number(summary.runtimeMs),
+              filesChanged: Number(summary.patchStats.filesChanged),
+              locAdded: Number(summary.patchStats.locAdded),
+              locDeleted: Number(summary.patchStats.locDeleted),
+              eligibilityStatus: 'eligible'
+            };
+            const next = [entry, ...rows.filter((row) => row.id !== entry.id)].slice(0, 100);
+            const content = Buffer.from(`${JSON.stringify(next, null, 2)}\n`, 'utf8').toString('base64');
+            await github.rest.repos.createOrUpdateFileContents({
+              owner,
+              repo,
+              path,
+              message: `Record OAJ scored result for ${summary.submissionId}`,
+              content,
+              sha: current.data.sha,
+              branch: 'main'
+            });
 
       - name: Comment sanitized result on PR
         if: ${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.pull_requests[0].number }}
