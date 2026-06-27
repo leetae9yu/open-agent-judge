@@ -130,17 +130,17 @@ describe("web UI skeleton", () => {
     for (const route of ["/auth/github/login", "/auth/logout"]) {
       assert.equal(app.includes(route), true, route);
     }
-    assert.match(app, /정적 GitHub Pages 모드 · 읽기 전용/);
+    assert.match(app, /Static GitHub Pages mode · read-only/);
     assert.match(app, /defaultApiBase = ""/);
     assert.match(app, /const apiConfigured = data\.source === "api"/);
     assert.match(app, /\$\{apiPanel\}/);
     assert.match(app, /\$\{submitPanel\}/);
     assert.match(app, /const submitPanel = canSubmit\(data\)/);
-    assert.match(app, /정적 GitHub Pages 모드는 읽기 전용이며 API 로그인, 직접 제출, 관리자 워커 컨트롤은 구성된 API와 권한이 있을 때만 표시됩니다/);
+    assert.match(app, /Static GitHub Pages mode is read-only\. API login, direct submission, and admin worker controls appear only when a configured API and roles allow them\./);
     assert.match(app, /const communityPanel = communityEnabled/);
-    assert.match(app, /토론, 태그, 난이도 투표는 구성된 API와 권한이 있을 때만 표시됩니다/);
+    assert.match(app, /Discussion, tags, and difficulty voting appear only when a configured API and roles allow them/);
     assert.match(app, /\.agentoj\/submission\.json/);
-    assert.match(app, /브라우저는 내부 프록시 헤더나 관리자 토큰을 저장하지 않습니다/);
+    assert.match(app, /The browser never stores internal proxy headers or admin tokens/);
     assert.doesNotMatch(app, /x-agentoj-auth-|x-agentoj-proxy-secret|x-agentoj-admin-token|x-agentoj-csrf/i);
     assert.match(app, /x-agentoj-browser-csrf/);
   });
@@ -154,19 +154,19 @@ describe("web UI skeleton", () => {
 
   it("renders API, write, reviewer, and admin controls only from real capabilities", async () => {
     const staticRun = await bootApp(staticFetch());
-    assert.doesNotMatch(staticRun.elements.get("[data-submission-result]")!.innerHTML, /href="[^"]*\/auth\/github\/login|data-submit-form|<h3>관리자 워커<\/h3>/);
-    assert.doesNotMatch(staticRun.elements.get("[data-discussion]")!.innerHTML, /data-community-form|리뷰어 승인/);
+    assert.doesNotMatch(staticRun.elements.get("[data-submission-result]")!.innerHTML, /href="[^"]*\/auth\/github\/login|data-submit-form|<h3>Admin worker<\/h3>/);
+    assert.doesNotMatch(staticRun.elements.get("[data-discussion]")!.innerHTML, /data-community-form|Reviewer approval/);
 
     const anonymousApi = await bootApp(apiFetch(), "?api=https://api.example");
-    assert.match(anonymousApi.elements.get("[data-submission-result]")!.innerHTML, /GitHub 로그인/);
-    assert.doesNotMatch(anonymousApi.elements.get("[data-submission-result]")!.innerHTML, /data-submit-form|<h3>관리자 워커<\/h3>/);
-    assert.doesNotMatch(anonymousApi.elements.get("[data-discussion]")!.innerHTML, /data-community-form|리뷰어 승인/);
+    assert.match(anonymousApi.elements.get("[data-submission-result]")!.innerHTML, /GitHub login/);
+    assert.doesNotMatch(anonymousApi.elements.get("[data-submission-result]")!.innerHTML, /data-submit-form|<h3>Admin worker<\/h3>/);
+    assert.doesNotMatch(anonymousApi.elements.get("[data-discussion]")!.innerHTML, /data-community-form|Reviewer approval/);
 
     const privilegedApi = await bootApp(apiFetch({ canSubmit: true, canDiscuss: true, canVote: true, canReview: true, canOperateWorkers: true }), "?api=https://api.example");
     assert.match(privilegedApi.elements.get("[data-submission-result]")!.innerHTML, /data-submit-form/);
-    assert.match(privilegedApi.elements.get("[data-submission-result]")!.innerHTML, /관리자 워커/);
+    assert.match(privilegedApi.elements.get("[data-submission-result]")!.innerHTML, /Admin worker/);
     assert.match(privilegedApi.elements.get("[data-discussion]")!.innerHTML, /data-community-form/);
-    assert.match(privilegedApi.elements.get("[data-discussion]")!.innerHTML, /리뷰어 승인/);
+    assert.match(privilegedApi.elements.get("[data-discussion]")!.innerHTML, /Reviewer approval/);
   });
 
   it("rejects unsafe api query origins without persisting them", async () => {

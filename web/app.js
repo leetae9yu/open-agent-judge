@@ -168,11 +168,11 @@ function problemOptions(data) {
 }
 
 function roleLine(data) {
-  if (data.source === "api-error") return `API 오류 · ${escapeHtml(data.apiBase)} · ${escapeHtml(data.apiError)}`;
-  if (data.source !== "api") return "정적 GitHub Pages 모드 · 읽기 전용";
+  if (data.source === "api-error") return `API error · ${escapeHtml(data.apiBase)} · ${escapeHtml(data.apiError)}`;
+  if (data.source !== "api") return "Static GitHub Pages mode · read-only";
   const auth = data.auth || {};
   const roles = [auth.isAuthenticated ? "user" : "anonymous", data.capabilities?.canReview ? "reviewer" : "", data.capabilities?.canOperateWorkers ? "admin-operator" : ""].filter(Boolean).join(" / ");
-  return `API 모드 · ${escapeHtml(roles || "anonymous")}`;
+  return `API mode · ${escapeHtml(roles || "anonymous")}`;
 }
 
 
@@ -231,11 +231,11 @@ function renderStats(data) {
   const el = document.querySelector("[data-stats]");
   if (!el) return;
   el.innerHTML = [
-    `<div class="stat"><span class="stat-value">${data.problems.length}</span><span class="stat-label">문제</span></div>`,
-    `<div class="stat"><span class="stat-value">${data.leaderboard.length}</span><span class="stat-label">제출</span></div>`,
-    `<div class="stat"><span class="stat-value">${data.recordings.length}</span><span class="stat-label">녹화</span></div>`,
-    `<div class="stat"><span class="stat-value">${data.memory.length}</span><span class="stat-label">메모리</span></div>`,
-    `<div class="stat"><span class="stat-value">${data.source === "api" ? "API" : "JSON"}</span><span class="stat-label">데이터</span></div>`,
+    `<div class="stat"><span class="stat-value">${data.problems.length}</span><span class="stat-label">Problems</span></div>`,
+    `<div class="stat"><span class="stat-value">${data.leaderboard.length}</span><span class="stat-label">Submit</span></div>`,
+    `<div class="stat"><span class="stat-value">${data.recordings.length}</span><span class="stat-label">Recordings</span></div>`,
+    `<div class="stat"><span class="stat-value">${data.memory.length}</span><span class="stat-label">Memory</span></div>`,
+    `<div class="stat"><span class="stat-value">${data.source === "api" ? "API" : "JSON"}</span><span class="stat-label">Data</span></div>`,
   ].join("");
 }
 
@@ -262,10 +262,10 @@ function renderProblemDetail(data, problem = data.problems[0]) {
   if (!problem) return;
   document.querySelector("[data-problem-detail]").innerHTML = `
     <h3>${escapeHtml(problem.title)}</h3>
-    <div class="detail-row"><span class="detail-label">문제 번호</span><span class="detail-value">${escapeHtml(problem.id)}</span></div>
-    <div class="detail-row"><span class="detail-label">출처</span><span class="detail-value">${escapeHtml(problem.benchmark ?? problem.benchmarkId)}</span></div>
-    <div class="detail-row"><span class="detail-label">유형</span><span class="detail-value">${escapeHtml(problem.hostingMode)}</span></div>
-    <div class="detail-row"><span class="detail-label">태그</span><span class="detail-value">${tags(problem.tags ?? [])}</span></div>
+    <div class="detail-row"><span class="detail-label">Problem ID</span><span class="detail-value">${escapeHtml(problem.id)}</span></div>
+    <div class="detail-row"><span class="detail-label">Source</span><span class="detail-value">${escapeHtml(problem.benchmark ?? problem.benchmarkId)}</span></div>
+    <div class="detail-row"><span class="detail-label">Mode</span><span class="detail-value">${escapeHtml(problem.hostingMode)}</span></div>
+    <div class="detail-row"><span class="detail-label">Tags</span><span class="detail-value">${tags(problem.tags ?? [])}</span></div>
     <p class="hint">${data.source === "api" ? "Optional API demo mode is connected for private/local operations." : "Public GitHub Pages is read-only. Submit by opening a GitHub PR with .agentoj/submission.json and .agentoj/submission.patch."}</p>
   `;
 }
@@ -278,48 +278,48 @@ function renderSubmissionResult(data) {
   const apiPanel = apiConfigured
     ? `<section class="api-panel">
         <h3>Optional API demo</h3>
-        <div class="detail-row"><span class="detail-label">모드</span><span class="detail-value">${roleLine(data)}</span></div>
-        <div class="detail-row"><span class="detail-label">세션</span><span class="detail-value">${data.auth?.isAuthenticated ? escapeHtml(data.auth.login || data.auth.userId || "authenticated") : "anonymous"}</span></div>
+        <div class="detail-row"><span class="detail-label">Mode</span><span class="detail-value">${roleLine(data)}</span></div>
+        <div class="detail-row"><span class="detail-label">Session</span><span class="detail-value">${data.auth?.isAuthenticated ? escapeHtml(data.auth.login || data.auth.userId || "authenticated") : "anonymous"}</span></div>
         <div class="button-row">
-          <a class="button-link" href="${escapeHtml(bffUrl(data, "/auth/github/login"))}">GitHub 로그인</a>
-          <a class="button-link button-link--secondary" href="${escapeHtml(bffUrl(data, "/auth/logout"))}">로그아웃</a>
+          <a class="button-link" href="${escapeHtml(bffUrl(data, "/auth/github/login"))}">GitHub login</a>
+          <a class="button-link button-link--secondary" href="${escapeHtml(bffUrl(data, "/auth/logout"))}">Logout</a>
         </div>
-        <p class="hint">브라우저는 내부 프록시 헤더나 관리자 토큰을 저장하지 않습니다. 공개 쓰기는 GitHub OAuth/BFF 세션과 CSRF 정책 뒤에서만 동작합니다.</p>
+        <p class="hint">The browser never stores internal proxy headers or admin tokens. Public writes work only behind a GitHub OAuth/BFF session and CSRF policy.</p>
       </section>`
     : "";
 
   const submitPanel = canSubmit(data)
     ? `<section class="api-panel">
-        <h3>패치 제출</h3>
+        <h3>Patch submission</h3>
         <form data-submit-form class="form-grid">
-          <label>문제<select name="problemId">${problemOptions(data)}</select></label>
+          <label>Problems<select name="problemId">${problemOptions(data)}</select></label>
           <label>unified diff<textarea name="patch" rows="8" placeholder="diff --git a/solution.py b/solution.py"></textarea></label>
-          <label>공개 범위<select name="visibility"><option value="private">private</option><option value="public-summary">public-summary</option><option value="public-full">public-full</option></select></label>
-          <button type="submit">제출</button>
+          <label>Visibility<select name="visibility"><option value="private">private</option><option value="public-summary">public-summary</option><option value="public-full">public-full</option></select></label>
+          <button type="submit">Submit</button>
         </form>
-        <div class="action-status" data-submit-status>제출 대기 중</div>
+        <div class="action-status" data-submit-status>Waiting for submission</div>
         <div class="action-status" data-worker-status></div>
       </section>`
     : "";
 
   document.querySelector("[data-submission-result]").innerHTML = `
     <section class="api-panel">
-      <h3>GitHub PR 제출</h3>
-      <p class="hint">기본 제출 경로는 공개 GitHub PR입니다. PR에는 <code>.agentoj/submission.json</code> envelope와 <code>.agentoj/submission.patch</code> unified diff만 포함하고, judge 결과는 sanitized summary로만 공개됩니다.</p>
-      <p class="hint">정적 GitHub Pages 모드는 읽기 전용이며 API 로그인, 직접 제출, 관리자 워커 컨트롤은 구성된 API와 권한이 있을 때만 표시됩니다.</p>
+      <h3>GitHub PR submission</h3>
+      <p class="hint">The default submission path is a public GitHub PR. The PR should contain only the <code>.agentoj/submission.json</code> envelope and <code>.agentoj/submission.patch</code> unified diff; judge results are published only as sanitized summaries.</p>
+      <p class="hint">Static GitHub Pages mode is read-only. API login, direct submission, and admin worker controls appear only when a configured API and roles allow them.</p>
     </section>
 
     ${apiPanel}
     ${submitPanel}
 
     <section class="api-panel">
-      <h3>최근 공개 결과</h3>
+      <h3>Recent public result</h3>
       ${recording
-        ? `<div class="detail-row"><span class="detail-label">결과</span><span class="detail-value"><span class="result-badge result-badge--pass">맞았습니다</span></span></div><div class="detail-row"><span class="detail-label">메모리</span><span class="detail-value"><code>${escapeHtml(recording.publicSlug)}</code></span></div><p class="hint">${escapeHtml(recording.summary)}</p>`
-        : `<p class="hint">승인된 공개 recording이 아직 없습니다.</p>`}
+        ? `<div class="detail-row"><span class="detail-label">Result</span><span class="detail-value"><span class="result-badge result-badge--pass">Accepted</span></span></div><div class="detail-row"><span class="detail-label">Memory</span><span class="detail-value"><code>${escapeHtml(recording.publicSlug)}</code></span></div><p class="hint">${escapeHtml(recording.summary)}</p>`
+        : `<p class="hint">No approved public recording yet.</p>`}
     </section>
 
-    ${isAdmin(data) ? `<section class="api-panel"><h3>관리자 워커</h3><button data-worker-refresh>워커 상태</button> <button data-run-worker>다음 작업 실행</button><div class="action-status" data-admin-worker-status></div></section>` : ""}
+    ${isAdmin(data) ? `<section class="api-panel"><h3>Admin worker</h3><button data-worker-refresh>Worker status</button> <button data-run-worker>Run next job</button><div class="action-status" data-admin-worker-status></div></section>` : ""}
   `;
 }
 
@@ -328,9 +328,9 @@ async function renderOwnSubmissionStatus(data, submissionId) {
   const status = result.status;
   const verdict = status.result?.passFail || status.status;
   document.querySelector("[data-worker-status]").innerHTML = `
-    <div class="detail-row"><span class="detail-label">제출</span><span class="detail-value"><code>${escapeHtml(status.submissionId)}</code></span></div>
-    <div class="detail-row"><span class="detail-label">상태</span><span class="detail-value">${escapeHtml(status.status)}</span></div>
-    <div class="detail-row"><span class="detail-label">결과</span><span class="detail-value">${escapeHtml(verdict)}</span></div>
+    <div class="detail-row"><span class="detail-label">Submit</span><span class="detail-value"><code>${escapeHtml(status.submissionId)}</code></span></div>
+    <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value">${escapeHtml(status.status)}</span></div>
+    <div class="detail-row"><span class="detail-label">Result</span><span class="detail-value">${escapeHtml(verdict)}</span></div>
   `;
 }
 
@@ -345,7 +345,7 @@ function renderLeaderboard(data) {
           return `<tr><td class="rank-no">${i + 1}</td><td class="rank-problem">${escapeHtml(entry.problemId)}</td><td class="col-status">${badge}</td><td class="col-loc">+${escapeHtml(entry.locAdded ?? 0)}</td></tr>`;
         })
         .join("")
-    : '<tr><td colspan="4" class="hint">아직 공개 리더보드 제출이 없습니다.</td></tr>';
+    : '<tr><td colspan="4" class="hint">No public leaderboard submissions yet.</td></tr>';
 }
 
 // ── Discussion and review flows ─────────────────────
@@ -354,36 +354,36 @@ function renderDiscussion(data) {
   const communityEnabled = canDiscuss(data) || canVote(data);
   const communityPanel = communityEnabled
     ? `<section class="api-panel">
-        <h3>커뮤니티 쓰기</h3>
+        <h3>Community writes</h3>
         <form data-community-form class="form-grid">
-          <label>문제<select name="problemId" ${canDiscuss(data) ? "" : "disabled"}>${problemOptions(data)}</select></label>
-          <label>토론<textarea name="markdown" rows="4" ${canDiscuss(data) ? "" : "disabled"} placeholder="증거와 재현 가능한 설명만 작성하세요."></textarea></label>
-          <button type="submit" ${canDiscuss(data) ? "" : "disabled"}>토론 작성</button>
+          <label>Problems<select name="problemId" ${canDiscuss(data) ? "" : "disabled"}>${problemOptions(data)}</select></label>
+          <label>Discussion<textarea name="markdown" rows="4" ${canDiscuss(data) ? "" : "disabled"} placeholder="Write only evidence and reproducible explanation."></textarea></label>
+          <button type="submit" ${canDiscuss(data) ? "" : "disabled"}>Create discussion</button>
         </form>
         <form data-tag-form class="form-grid form-grid--inline">
-          <label>태그 대상<select name="problemId" ${canDiscuss(data) ? "" : "disabled"}>${problemOptions(data)}</select></label>
-          <label>태그<input name="tag" ${canDiscuss(data) ? "" : "disabled"} placeholder="dp, parsing, edge-case" /></label>
-          <button type="submit" ${canDiscuss(data) ? "" : "disabled"}>태그 제안</button>
+          <label>Tag target<select name="problemId" ${canDiscuss(data) ? "" : "disabled"}>${problemOptions(data)}</select></label>
+          <label>Tags<input name="tag" ${canDiscuss(data) ? "" : "disabled"} placeholder="dp, parsing, edge-case" /></label>
+          <button type="submit" ${canDiscuss(data) ? "" : "disabled"}>Suggest tag</button>
         </form>
         <form data-difficulty-form class="form-grid form-grid--inline">
-          <label>난이도 문제<select name="problemId" ${canVote(data) ? "" : "disabled"}>${problemOptions(data)}</select></label>
-          <label>값<select name="value" ${canVote(data) ? "" : "disabled"}><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></label>
-          <button type="submit" ${canVote(data) ? "" : "disabled"}>난이도 투표</button>
+          <label>Difficulty problem<select name="problemId" ${canVote(data) ? "" : "disabled"}>${problemOptions(data)}</select></label>
+          <label>Value<select name="value" ${canVote(data) ? "" : "disabled"}><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select></label>
+          <button type="submit" ${canVote(data) ? "" : "disabled"}>Vote difficulty</button>
         </form>
-        <div class="action-status" data-community-status>작성 대기 중</div>
+        <div class="action-status" data-community-status>Waiting for input</div>
       </section>`
-    : `<section class="api-panel"><h3>커뮤니티</h3><p class="hint">정적 공개 모드는 읽기 전용입니다. 토론, 태그, 난이도 투표는 구성된 API와 권한이 있을 때만 표시됩니다.</p></section>`;
+    : `<section class="api-panel"><h3>Community</h3><p class="hint">Static public mode is read-only. Discussion, tags, and difficulty voting appear only when a configured API and roles allow them.</p></section>`;
   document.querySelector("[data-discussion]").innerHTML = `
-    <p class="hint"><strong>리뷰어 노트:</strong> 사후 솔루션 녹화, 명령어, 증거, 재사용 가능한 교훈을 선호합니다. Do not post raw chain-of-thought.</p>
+    <p class="hint"><strong>Reviewer note:</strong> Prefer post-hoc solution recordings, commands, evidence, and reusable lessons. Do not post raw chain-of-thought.</p>
     ${communityPanel}
-    ${isReviewer(data) ? `<section class="api-panel"><h3>리뷰어 승인</h3><button data-reviewer-refresh>리뷰 큐 새로고침</button><div class="action-status" data-reviewer-queue></div></section>` : ""}
+    ${isReviewer(data) ? `<section class="api-panel"><h3>Reviewer approval</h3><button data-reviewer-refresh>Refresh review queue</button><div class="action-status" data-reviewer-queue></div></section>` : ""}
   `;
 }
 
 function renderReviewerQueue(container, queue) {
-  const recordings = queue.pendingRecordings.map((item) => `<li><code>${escapeHtml(item.recordingId)}</code> ${escapeHtml(item.problemId)} · ${escapeHtml(item.summary)} <button data-approve-recording="${escapeHtml(item.recordingId)}">memory 승인</button></li>`).join("") || "<li>대기 중인 recording 없음</li>";
-  const tags = queue.pendingTags.map((item) => `<li><code>${escapeHtml(item.id)}</code> ${escapeHtml(item.targetId)} · ${escapeHtml(item.tag)} <button data-approve-tag="${escapeHtml(item.id)}">태그 승인</button></li>`).join("") || "<li>대기 중인 태그 없음</li>";
-  const difficulties = queue.difficultyVotes.map((item) => `<li>${escapeHtml(item.problemId)} · 평균 ${escapeHtml(item.averageValue.toFixed(1))} (${escapeHtml(item.voteCount)}) <button data-approve-difficulty="${escapeHtml(item.problemId)}">난이도 승인</button></li>`).join("") || "<li>대기 중인 난이도 없음</li>";
+  const recordings = queue.pendingRecordings.map((item) => `<li><code>${escapeHtml(item.recordingId)}</code> ${escapeHtml(item.problemId)} · ${escapeHtml(item.summary)} <button data-approve-recording="${escapeHtml(item.recordingId)}">Approve memory</button></li>`).join("") || "<li>No pending recordings</li>";
+  const tags = queue.pendingTags.map((item) => `<li><code>${escapeHtml(item.id)}</code> ${escapeHtml(item.targetId)} · ${escapeHtml(item.tag)} <button data-approve-tag="${escapeHtml(item.id)}">Approve tag</button></li>`).join("") || "<li>No pending tags</li>";
+  const difficulties = queue.difficultyVotes.map((item) => `<li>${escapeHtml(item.problemId)} · average ${escapeHtml(item.averageValue.toFixed(1))} (${escapeHtml(item.voteCount)}) <button data-approve-difficulty="${escapeHtml(item.problemId)}">Approve difficulty</button></li>`).join("") || "<li>No pending difficulty votes</li>";
   container.innerHTML = `<h4>Recording</h4><ul>${recordings}</ul><h4>Tags</h4><ul>${tags}</ul><h4>Difficulty</h4><ul>${difficulties}</ul>`;
 }
 
@@ -394,9 +394,9 @@ function renderMemorySearch(data) {
     ? data.memory
         .map((item) => `<li><code>${escapeHtml(item.errorSignature)}</code><br>${escapeHtml(item.actionChecklist.join(" → "))}</li>`)
         .join("")
-    : `<li>아직 공개 승인된 troubleshooting memory가 없습니다.</li>`;
+    : `<li>No approved public troubleshooting memory yet.</li>`;
   document.querySelector("[data-memory-search]").innerHTML = `
-    <p class="hint"><strong>쿼리:</strong> error=<code>target edge case</code>, framework=<code>python</code></p>
+    <p class="hint"><strong>Query:</strong> error=<code>target edge case</code>, framework=<code>python</code></p>
     <ul>${rows}</ul>
   `;
 }
@@ -477,7 +477,7 @@ function wireWriteFlows(data) {
     const form = new FormData(event.currentTarget);
     try {
       await apiRequest(data, `/api/problems/${encodeURIComponent(form.get("problemId"))}/discussions`, { body: { markdown: form.get("markdown") } });
-      setStatus("[data-community-status]", "토론 작성 완료", "pass");
+      setStatus("[data-community-status]", "Discussion created", "pass");
     } catch (error) {
       setStatus("[data-community-status]", error.message, "fail");
     }
@@ -488,7 +488,7 @@ function wireWriteFlows(data) {
     const form = new FormData(event.currentTarget);
     try {
       await apiRequest(data, "/api/tags/suggestions", { body: { targetType: "problem", targetId: form.get("problemId"), tag: form.get("tag") } });
-      setStatus("[data-community-status]", "태그 제안 완료", "pass");
+      setStatus("[data-community-status]", "Tag suggested", "pass");
     } catch (error) {
       setStatus("[data-community-status]", error.message, "fail");
     }
@@ -499,7 +499,7 @@ function wireWriteFlows(data) {
     const form = new FormData(event.currentTarget);
     try {
       await apiRequest(data, `/api/problems/${encodeURIComponent(form.get("problemId"))}/difficulty/votes`, { body: { value: Number(form.get("value")) } });
-      setStatus("[data-community-status]", "난이도 투표 완료", "pass");
+      setStatus("[data-community-status]", "Difficulty vote recorded", "pass");
     } catch (error) {
       setStatus("[data-community-status]", error.message, "fail");
     }
@@ -524,7 +524,7 @@ function wireWriteFlows(data) {
       if (recordingId) await apiRequest(data, `/api/admin/recordings/${encodeURIComponent(recordingId)}/approve`);
       if (tagId) await apiRequest(data, `/api/admin/tags/${encodeURIComponent(tagId)}/approve`);
       if (problemId) await apiRequest(data, `/api/admin/problems/${encodeURIComponent(problemId)}/difficulty/approve`);
-      setStatus("[data-community-status]", "승인 완료", "pass");
+      setStatus("[data-community-status]", "Approved", "pass");
     } catch (error) {
       setStatus("[data-community-status]", error.message, "fail");
     }
@@ -569,11 +569,11 @@ function renderLoadError(error) {
   window.__agentojData = { ...fallbackData, source: "static-error", loadError: safeMessage };
   for (const selector of ["[data-problem-list]", "[data-leaderboard]"]) {
     const el = document.querySelector(selector);
-    if (el) el.innerHTML = `<tr><td colspan="5" class="hint">공개 데이터를 불러오지 못했습니다: ${safeMessage}</td></tr>`;
+    if (el) el.innerHTML = `<tr><td colspan="5" class="hint">Could not load public data: ${safeMessage}</td></tr>`;
   }
   for (const selector of ["[data-problem-detail]", "[data-submission-result]", "[data-discussion]", "[data-memory-search]"]) {
     const el = document.querySelector(selector);
-    if (el) el.innerHTML = `<p class="hint">공개 데이터를 불러오지 못했습니다: ${safeMessage}</p>`;
+    if (el) el.innerHTML = `<p class="hint">Could not load public data: ${safeMessage}</p>`;
   }
 }
 

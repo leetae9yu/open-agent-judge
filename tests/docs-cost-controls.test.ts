@@ -24,7 +24,7 @@ describe("PR-based operating model docs and cost controls", () => {
     assert.match(readme, /distinct `originalEvidenceId`\/`rerunEvidenceId`/);
     assert.match(readme, /Scored public judging must fail closed/);
     assert.doesNotMatch(readme, /docker-fallback-local/);
-    assert.doesNotMatch(app, /agentoj-leetae9yu\.koreacentral\.cloudapp\.azure\.com/);
+    assert.doesNotMatch(app, /example-internal-host\\.internal/);
   });
 
   it("ships OSS hygiene templates and hides operations inventory", () => {
@@ -46,7 +46,7 @@ describe("PR-based operating model docs and cost controls", () => {
 
     assert.match(readme, /OSS project hygiene/);
     assert.match(readme, /Dependency, GitHub Actions, and Docker image update rules/);
-    assert.doesNotMatch(readme, /agentoj-leetae9yu|agentoj-prod-rg|agentoj-prod-vm|Standard_B2ats_v2|koreacentral/i);
+    assert.doesNotMatch(readme, /internal-host|prod-resource-group|prod-vm|cloud-region|vm-sku/i);
     assert.match(contributing, /GitHub Actions updates: resolve the upstream tag to a full commit SHA/);
     assert.match(contributing, /Docker image updates: record the upstream tag, resolved digest/);
     assert.match(security, /Reporting vulnerabilities/);

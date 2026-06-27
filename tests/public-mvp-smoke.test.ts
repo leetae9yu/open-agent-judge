@@ -114,7 +114,7 @@ describe("public MVP release smoke", () => {
     const problems = JSON.parse(readFileSync("web/data/problems.json", "utf8")) as Array<{ id: string }>;
     assert.match(html, /\.\/app\.js/);
     assert.match(app, /agentojApiBase/);
-    assert.match(app, /API 오류/);
+    assert.match(app, /API error/);
     assert.equal(problems.some((problem) => problem.id === "humaneval-001"), true);
 
     const { baseUrl } = await withServer();
