@@ -154,6 +154,7 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.match(report, /validateSanitizedPrJudgeSummary/);
     assert.match(report, /escapeMarkdown/);
     assert.match(report, /validationMessages\.map\(\(message\) => `- \$\{escapeMarkdown\(message\)\}`\)/);
+    assert.match(report, /continue-on-error: true/);
     assert.match(report, /Publish passed result to static leaderboard/);
     assert.match(report, /web\/data\/leaderboard\.json/);
     assert.match(report, /summary\.status !== 'passed'/);
