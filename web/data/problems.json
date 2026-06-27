@@ -1,0 +1,29 @@
+[
+  {
+    "id": "humaneval-001",
+    "title": "Return the first element",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/1",
+    "hostingMode": "hosted",
+    "tags": ["python", "unittest", "list"]
+  },
+  {
+    "id": "humaneval-002",
+    "title": "Return the largest element",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/2",
+    "hostingMode": "hosted",
+    "tags": ["python", "unittest", "list"]
+  },
+  {
+    "id": "humaneval-003-adapter-only",
+    "title": "Reverse a string",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/3",
+    "hostingMode": "adapter-only",
+    "tags": ["python", "unittest", "string"]
+  }
+]

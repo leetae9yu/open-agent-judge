@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "replace-with-stable-submission-id",
+  "problemId": "humaneval-001",
+  "adapterId": "humaneval-python",
+  "prHeadSha": "0000000",
+  "patchSha256": "sha256:replace-with-64-hex-lowercase-digest",
+  "patchBytes": 1,
+  "patchStats": {
+    "filesChanged": 1,
+    "locAdded": 1,
+    "locDeleted": 1
+  },
+  "files": [
+    {
+      "path": "solution.py",
+      "changeType": "modify",
+      "gitMode": "100644",
+      "byteSize": 1,
+      "isBinary": false,
+      "isSymlink": false
+    }
+  ],
+  "publicSubmission": true
+}

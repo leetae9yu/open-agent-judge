@@ -1,0 +1,18 @@
+{
+  "name": "open-agent-judge",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "Open-source judge for evaluating AI coding-agent PRs with hidden tests, sandboxed execution, and reproducible evidence.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:contracts": "node --experimental-strip-types --test tests/contracts.test.ts",
+    "agentoj": "node --experimental-strip-types src/cli.ts",
+    "agentoj:serve": "node --experimental-strip-types src/cli.ts serve",
+    "smoke:deploy": "node --experimental-strip-types --test tests/api-community-deployment.test.ts tests/api-sqlite-deployment.test.ts tests/public-mvp-smoke.test.ts"
+  },
+  "engines": {
+    "node": ">=22.6.0"
+  }
+}

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+.gjc/
+artifacts/
+runs/
+*.sqlite
+*.sqlite3
+.env
+.env.*
+*.log

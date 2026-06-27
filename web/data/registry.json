@@ -1,0 +1,30 @@
+[
+  {
+    "benchmarkId": "humaneval",
+    "name": "HumanEval",
+    "licenseId": "MIT",
+    "status": "implemented",
+    "dataPolicy": "fixture-seed"
+  },
+  {
+    "benchmarkId": "mbpp",
+    "name": "Mostly Basic Python Problems",
+    "licenseId": "Apache-2.0",
+    "status": "candidate",
+    "dataPolicy": "metadata-only"
+  },
+  {
+    "benchmarkId": "quixbugs",
+    "name": "QuixBugs",
+    "licenseId": "MIT",
+    "status": "candidate",
+    "dataPolicy": "metadata-only"
+  },
+  {
+    "benchmarkId": "swe-bench-lite",
+    "name": "SWE-bench Lite",
+    "licenseId": "MIT",
+    "status": "candidate",
+    "dataPolicy": "metadata-only"
+  }
+]
