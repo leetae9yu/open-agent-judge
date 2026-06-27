@@ -1,0 +1,98 @@
+<svg width="1200" height="420" viewBox="0 0 1200 420" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Open Agent Judge hero banner</title>
+  <desc id="desc">A dark open-source style banner for Open Agent Judge showing a patch moving through validation, sandboxing, rerun evidence, and public reporting.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B1020"/>
+      <stop offset="0.48" stop-color="#101A35"/>
+      <stop offset="1" stop-color="#121826"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="152" y1="64" x2="380" y2="304" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="0.5" stop-color="#06B6D4"/>
+      <stop offset="1" stop-color="#22C55E"/>
+    </linearGradient>
+    <linearGradient id="line" x1="170" y1="298" x2="1025" y2="298" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C3AED"/>
+      <stop offset="0.5" stop-color="#06B6D4"/>
+      <stop offset="1" stop-color="#22C55E"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.24 0 0 0 0 0.75 0 0 0 0 1 0 0 0 0.38 0"/>
+      <feBlend in2="SourceGraphic" mode="screen"/>
+    </filter>
+    <style>
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace; }
+      .sans { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+      .small { fill: #9CA3AF; font-size: 15px; letter-spacing: .02em; }
+      .label { fill: #D1D5DB; font-size: 14px; font-weight: 650; }
+      .chip { fill: #111827; stroke: #334155; stroke-width: 1; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="420" rx="28" fill="url(#bg)"/>
+  <path d="M0 312C130 270 230 356 360 312C490 268 602 238 735 282C880 330 1000 244 1200 292V420H0V312Z" fill="#0EA5E9" opacity="0.08"/>
+  <path d="M0 348C180 290 283 372 438 340C594 308 716 300 855 342C993 384 1090 330 1200 304V420H0V348Z" fill="#22C55E" opacity="0.07"/>
+
+  <g opacity="0.35">
+    <path d="M76 78H1124" stroke="#334155" stroke-dasharray="2 10"/>
+    <path d="M76 342H1124" stroke="#334155" stroke-dasharray="2 10"/>
+    <path d="M92 56V366" stroke="#334155" stroke-dasharray="2 10"/>
+    <path d="M1108 56V366" stroke="#334155" stroke-dasharray="2 10"/>
+  </g>
+
+  <g filter="url(#glow)">
+    <circle cx="204" cy="166" r="96" fill="url(#accent)" opacity="0.18"/>
+  </g>
+
+  <g transform="translate(112 78)">
+    <rect x="0" y="0" width="184" height="184" rx="34" fill="#0F172A" stroke="#475569" stroke-width="2"/>
+    <path d="M92 30L142 52V91C142 123 121 150 92 159C63 150 42 123 42 91V52L92 30Z" fill="#111827" stroke="url(#accent)" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M70 88L86 104L116 72" stroke="#22C55E" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M34 124H70" stroke="#64748B" stroke-width="6" stroke-linecap="round"/>
+    <path d="M114 124H150" stroke="#64748B" stroke-width="6" stroke-linecap="round"/>
+    <path d="M60 142H124" stroke="#334155" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(344 76)">
+    <text class="sans" x="0" y="48" fill="#F8FAFC" font-size="50" font-weight="800" letter-spacing="-0.04em">Open Agent Judge</text>
+    <text class="sans" x="0" y="90" fill="#A5B4FC" font-size="24" font-weight="700">Model is not all. Evaluate your harness.</text>
+    <text class="sans" x="0" y="128" fill="#CBD5E1" font-size="18">Hidden tests, sandboxed PR judging, reproducible evidence, public-safe reporting.</text>
+
+    <g transform="translate(0 160)">
+      <rect class="chip" x="0" y="0" width="150" height="36" rx="18"/>
+      <text class="label sans" x="20" y="24">hidden oracle</text>
+      <rect class="chip" x="166" y="0" width="130" height="36" rx="18"/>
+      <text class="label sans" x="186" y="24">Docker</text>
+      <rect class="chip" x="312" y="0" width="168" height="36" rx="18"/>
+      <text class="label sans" x="332" y="24">independent rerun</text>
+      <rect class="chip" x="496" y="0" width="152" height="36" rx="18"/>
+      <text class="label sans" x="516" y="24">sanitized report</text>
+    </g>
+  </g>
+
+  <g transform="translate(166 294)">
+    <path d="M0 0H854" stroke="url(#line)" stroke-width="4" stroke-linecap="round"/>
+    <g class="sans" font-size="13" font-weight="700">
+      <circle cx="0" cy="0" r="10" fill="#7C3AED"/>
+      <text x="-38" y="34" fill="#D1D5DB">patch</text>
+      <circle cx="214" cy="0" r="10" fill="#6366F1"/>
+      <text x="166" y="34" fill="#D1D5DB">validate</text>
+      <circle cx="428" cy="0" r="10" fill="#06B6D4"/>
+      <text x="390" y="34" fill="#D1D5DB">sandbox</text>
+      <circle cx="642" cy="0" r="10" fill="#14B8A6"/>
+      <text x="610" y="34" fill="#D1D5DB">rerun</text>
+      <circle cx="854" cy="0" r="10" fill="#22C55E"/>
+      <text x="816" y="34" fill="#D1D5DB">publish</text>
+    </g>
+  </g>
+
+  <g transform="translate(892 92)" class="mono">
+    <rect x="0" y="0" width="224" height="146" rx="18" fill="#020617" stroke="#334155"/>
+    <text x="22" y="38" fill="#22C55E" font-size="16">+ patch.diff</text>
+    <text x="22" y="68" fill="#38BDF8" font-size="16">✓ sha bound</text>
+    <text x="22" y="98" fill="#A78BFA" font-size="16">✓ docker scored</text>
+    <text x="22" y="128" fill="#F8FAFC" font-size="16">→ public summary</text>
+  </g>
+</svg>

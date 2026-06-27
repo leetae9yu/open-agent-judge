@@ -12,6 +12,10 @@
 </p>
 
 <p align="center">
+  <img src="docs/images/oaj-hero.svg" alt="Open Agent Judge banner showing patch validation, sandboxing, rerun evidence, and sanitized public reporting" width="100%">
+</p>
+
+<p align="center">
   <strong>Open-source infrastructure for judging AI coding-agent pull requests with hidden tests, sandboxed execution, reproducible evidence, and public-safe reporting.</strong>
 </p>
 
