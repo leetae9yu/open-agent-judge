@@ -31,6 +31,19 @@ export interface ResourceLimits {
   memoryMb: number;
   networkPolicy: NetworkPolicy;
 }
+export interface BenchmarkExecutionPolicy {
+  benchmarkId: string;
+  maxPatchBytes: number;
+  maxPatchFiles: number;
+  maxFileBytes: number;
+  resources: ResourceLimits;
+  maxWorkers?: number;
+  maintainerTriggeredOnly?: boolean;
+  explicitPrHeadShaRequired?: boolean;
+  allowlistedInstanceRequired?: boolean;
+  artifactRetentionDays?: number;
+  cacheKeyComponents?: readonly string[];
+}
 
 export interface Adapter {
   id: string;
@@ -46,13 +59,104 @@ export interface Adapter {
 
 export type ProblemScoringMode = "demo-public" | "scored-hidden";
 export type OracleMetadataKind = "hidden-fixture" | "generated-private";
+export type PrivateOracleDescriptorKind = "python-function-cases" | "python-function-tests" | "command-hidden-tests" | "swebench-upstream-harness";
+
+export interface PrivateOracleEvidencePolicy {
+  originalEvidenceId: string;
+  rerunEvidenceId: string;
+}
+
+export interface PythonFunctionOracleCase {
+  id: string;
+  args: readonly unknown[];
+  expected: unknown;
+}
+
+export interface PythonFunctionPrivateOracleDescriptor {
+  schemaVersion: 2;
+  problemId: string;
+  benchmarkId: string;
+  adapterId: string;
+  upstreamTaskId: string;
+  oracleKind: "python-function-cases";
+  entryPoint: string;
+  cases: readonly PythonFunctionOracleCase[];
+  evidencePolicy: PrivateOracleEvidencePolicy;
+  descriptorRevision?: string;
+}
+
+export interface PythonFunctionTestsPrivateOracleDescriptor {
+  schemaVersion: 2;
+  problemId: string;
+  benchmarkId: string;
+  adapterId: string;
+  upstreamTaskId: string;
+  oracleKind: "python-function-tests";
+  entryPoint: string;
+  testSource: string;
+  testSourceHash: string;
+  evidencePolicy: PrivateOracleEvidencePolicy;
+  descriptorRevision?: string;
+}
+
+export interface CommandHiddenTestsPrivateOracleDescriptor {
+  schemaVersion: 2;
+  problemId: string;
+  benchmarkId: string;
+  adapterId: string;
+  upstreamTaskId: string;
+  oracleKind: "command-hidden-tests";
+  commandId: string;
+  allowedTargets: readonly string[];
+  hiddenTestBundleHash: string;
+  expectedExitCode: number;
+  testSource: string;
+  testSourceHash: string;
+  evidencePolicy: PrivateOracleEvidencePolicy;
+  descriptorRevision?: string;
+  fixtureRef?: string;
+  fixtureHash?: string;
+}
+
+export interface SwebenchPrivateOracleDescriptor {
+  schemaVersion: 2;
+  problemId: string;
+  benchmarkId: string;
+  adapterId: string;
+  upstreamTaskId: string;
+  oracleKind: "swebench-upstream-harness";
+  datasetName: string;
+  datasetRevision: string;
+  split: string;
+  instanceId: string;
+  repo: string;
+  baseCommit: string;
+  harnessCommit: string;
+  harnessImageDigest: string;
+  predictionJsonlSchemaHash: string;
+  cacheKey: string;
+  evidencePolicy: PrivateOracleEvidencePolicy;
+  descriptorRevision?: string;
+}
+
+export type PrivateOracleDescriptor =
+  | PythonFunctionPrivateOracleDescriptor
+  | PythonFunctionTestsPrivateOracleDescriptor
+  | CommandHiddenTestsPrivateOracleDescriptor
+  | SwebenchPrivateOracleDescriptor;
+
+export interface PrivateOracleDescriptorBundle {
+  schemaVersion: 2;
+  descriptors?: readonly PrivateOracleDescriptor[];
+  problems?: Record<string, PrivateOracleDescriptor>;
+}
 
 export interface ProblemOracleMetadata {
   kind: OracleMetadataKind;
   hiddenRequired: true;
   oracleDescriptorHash: string;
-  originalEvidenceId: string;
-  rerunEvidenceId: string;
+  originalEvidenceId?: string;
+  rerunEvidenceId?: string;
 }
 
 export interface Problem {
@@ -145,7 +249,7 @@ export interface SanitizedPrJudgeSummary {
   rawChainOfThought?: never;
 }
 
-export interface RunnerJob {
+export interface RunnerJobBase {
   id: string;
   submissionId: string;
   adapterId: string;
@@ -153,10 +257,12 @@ export interface RunnerJob {
   dockerImageDigest: string;
   resources: ResourceLimits;
   status: RunnerStatus;
-  scoringStatus: ScoringStatus;
   sandboxMode: SandboxExecutionMode;
-  oracleDescriptorHash: string | null;
 }
+
+export type RunnerJob =
+  | (RunnerJobBase & { scoringStatus: "demo"; oracleDescriptorHash: null })
+  | (RunnerJobBase & { scoringStatus: "scored"; oracleDescriptorHash: string });
 
 export interface RunnerResult {
   id: string;

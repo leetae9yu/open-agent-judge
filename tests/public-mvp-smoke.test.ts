@@ -32,8 +32,9 @@ function seedPrivateScoredCatalog() {
   };
 }
 
-function scoredVerification(submission: ReturnType<typeof createPatchSubmission>, adapter: ReturnType<typeof seedPermissiveCatalog>["adapter"], scenario: Parameters<typeof simulateSandboxVerification>[2], runSeed: string) {
+function syntheticScoredDockerVerificationForRedactionFixture(submission: ReturnType<typeof createPatchSubmission>, adapter: ReturnType<typeof seedPermissiveCatalog>["adapter"], scenario: Parameters<typeof simulateSandboxVerification>[2], runSeed: string) {
   const verification = simulateSandboxVerification(submission, adapter, scenario, runSeed);
+  // Redaction fixtures need scored Docker-shaped evidence to exercise public-read gates, but this helper is synthetic and is never live Docker execution evidence.
   return {
     ...verification,
     job: {
@@ -218,7 +219,7 @@ describe("public MVP release smoke", () => {
     assert.doesNotMatch(communityBody, /diff --git|return xs\[0\]|stdout|stderr|supersecret|abc123|prod\.sqlite|bearer123|leak\/path|leaked_line|removed_line|sk-public|gh-public|AKIA1234567890ABCDEF|leak\.db|oracle|result_bundle|judge\.internal|container_id|user:pass|ghp_|sk-123|eyJ|obfuscated-token/i);
   });
 
-  it("documents production OAuth as a BFF boundary and keeps candidate benchmarks metadata-only", async () => {
+  it("documents production OAuth as a BFF boundary and exposes implemented benchmark expansion metadata", async () => {
     const { baseUrl } = await withServer({ authMode: "production-oauth", trustedProxySecret: undefined });
     const me = await json<{ auth: { mode: string; userId: string | null }; capabilities: { canSubmit: boolean; canReview: boolean } }>(
       await fetch(`${baseUrl}/api/me`),
@@ -237,26 +238,31 @@ describe("public MVP release smoke", () => {
 
     const registry = listAdapterRegistry();
     const candidates = registry.filter((entry) => entry.status === "candidate");
-    assert.deepEqual(candidates.map((entry) => entry.benchmark.id).sort(), ["quixbugs", "swe-bench-lite"]);
-    for (const entry of candidates) {
-      assert.equal(entry.dataPolicy, "metadata-only");
-      assert.equal(entry.adapter, undefined);
-      assert.equal(entry.benchmark.defaultHostingMode, "adapter-only");
-      assert.equal(entry.benchmark.legalStatus, "approved");
-      assert.match(entry.benchmark.licenseId, /^[A-Za-z0-9][A-Za-z0-9.-]+$/);
-      assert.equal(entry.benchmark.redistributionRights, "clear");
-      assert.match(`${entry.dataPolicy} ${entry.notes}`, /metadata only|Metadata-only|metadata-only/i);
-    }
+    assert.deepEqual(candidates.map((entry) => entry.benchmark.id).sort(), []);
     const mbpp = registry.find((entry) => entry.benchmark.id === "mbpp");
     assert.ok(mbpp);
     assert.equal(mbpp.status, "implemented");
-    assert.equal(mbpp.dataPolicy, "fixture-seed");
-    assert.equal(mbpp.benchmark.defaultHostingMode, "adapter-only");
-    assert.deepEqual(mbpp.adapter?.supportedHostingModes, ["adapter-only"]);
+    assert.equal(mbpp.dataPolicy, "full-hidden-plus-fixture-seed");
+    assert.equal(mbpp.benchmark.defaultHostingMode, "hosted");
+    assert.deepEqual(mbpp.adapter?.supportedHostingModes, ["adapter-only", "hosted"]);
+    const quixbugs = registry.find((entry) => entry.benchmark.id === "quixbugs");
+    assert.ok(quixbugs);
+    assert.equal(quixbugs.status, "implemented");
+    assert.equal(quixbugs.dataPolicy, "full-hidden-plus-fixture-seed");
+    assert.equal(quixbugs.benchmark.defaultHostingMode, "hosted");
+    assert.deepEqual(quixbugs.adapter?.supportedHostingModes, ["hosted"]);
+    const sweVerified = registry.find((entry) => entry.benchmark.id === "swe-bench-verified");
+    assert.ok(sweVerified);
+    assert.equal(sweVerified.status, "implemented");
+    assert.equal(sweVerified.dataPolicy, "full-hidden-plus-fixture-seed");
+    assert.equal(sweVerified.adapter?.id, "swebench-verified");
+    assert.match(sweVerified.notes, /Lite evidence cannot satisfy Verified scoring/);
 
     const problems = await json<{ problems: Array<{ benchmarkId: string; hostingMode: string }> }>(await fetch(`${baseUrl}/api/problems`));
     assert.equal(problems.problems.some((problem) => problem.benchmarkId === "mbpp" && problem.hostingMode === "adapter-only"), true);
-    assert.equal(problems.problems.some((problem) => ["quixbugs", "swe-bench-lite"].includes(problem.benchmarkId)), false);
+    assert.equal(problems.problems.some((problem) => problem.benchmarkId === "mbpp" && problem.hostingMode === "hosted"), true);
+    assert.equal(problems.problems.some((problem) => problem.benchmarkId === "swe-bench-verified" && problem.hostingMode === "adapter-only"), true);
+    assert.equal(problems.problems.some((problem) => problem.benchmarkId === "swe-bench-lite" && problem.hostingMode === "adapter-only"), true);
   });
 
   it("smokes public memory/search/export trust without promoting unapproved data", async () => {
@@ -293,14 +299,14 @@ describe("public MVP release smoke", () => {
     const approved = (() => {
       const catalog = seedPrivateScoredCatalog();
       const submission = createPatchSubmission(catalog.hostedProblem, `github-123-${Date.now()}`);
-      const verification = scoredVerification(submission, catalog.adapter, "pass", "original");
-      const rerun = scoredVerification(submission, catalog.adapter, "pass", "rerun");
+      const verification = syntheticScoredDockerVerificationForRedactionFixture(submission, catalog.adapter, "pass", "original");
+      const rerun = syntheticScoredDockerVerificationForRedactionFixture(submission, catalog.adapter, "pass", "rerun");
       const baseRecording = createSolutionRecording(catalog, submission, verification);
       const recording = {
         ...baseRecording,
         summary: "Approved public first-element troubleshooting summary with stdout stderr oauth_token ghp_123 session cookie abc123 secret=plainsecret token=plaintoken https://user:pass@example.test ghp_123456789012345678901234567890123456 sk-1234567890abcdef.",
         rootCause: "target edge case approved public root includes AGENTOJ_TRUSTED_PROXY_SECRET=supersecret OPENAI_API_KEY=sk-public GITHUB_TOKEN=gh-public AWS_ACCESS_KEY_ID=AKIA1234567890ABCDEF DATABASE_URL=sqlite:///tmp/leak.db API CSRF abc123 Authorization: Bearer bearer123 /var/lib/app/prod.sqlite /tmp/leak/path.txt diff --git return xs[0] oraclePath=/srv/private/oracle/cases.json result_bundle=/tmp/results/bundle.tgz api-origin=https://judge.internal container_id=abc123 eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.signature.",
-        fixDescription: "Return the first element and keep the deterministic fixture passing.\n+ leaked_line\n- removed_line\n+ return xs[0]  # SHOULD_NOT_LEAK_PATCH\nsession token=shh456\ns&#101;cret=obfuscated-token",
+        fixDescription: "Return the first element and keep the deterministic fixture passing.\nindex 1111111..2222222 100644\n+ leaked_line\n- removed_line\n+ return xs[0]  # SHOULD_NOT_LEAK_PATCH\nsession token=shh456\ns&#101;cret=obfuscated-token",
       };
       const evidence = runAutomaticCheck(recording, rerun);
       const review = approveRecording(recording, "reviewer");
@@ -336,10 +342,17 @@ describe("public MVP release smoke", () => {
     const outDir = join(mkdtempSync(join(tmpdir(), "agentoj-pages-export-")), "web-data");
     const exported = runCli(["export-web-data", "--db", config.dbPath, "--out", outDir]);
     assert.equal(exported.ok, true);
+    const problemsJson = readFileSync(join(outDir, "problems.json"), "utf8");
+    const publicProblems = JSON.parse(problemsJson) as Array<{ id: string; benchmarkId: string }>;
+    assert.equal(publicProblems.some((problem) => problem.id === "mbpp-full-003"), true);
+    assert.equal(publicProblems.some((problem) => problem.benchmarkId === "quixbugs"), true);
+    assert.equal(publicProblems.some((problem) => problem.benchmarkId === "swe-bench-lite"), true);
+    assert.equal(publicProblems.some((problem) => problem.benchmarkId === "swe-bench-verified"), true);
+    bodies.push(problemsJson);
     bodies.push(readFileSync(join(outDir, "recordings.json"), "utf8"));
     bodies.push(readFileSync(join(outDir, "memory.json"), "utf8"));
     for (const body of bodies) {
-      assert.doesNotMatch(body, /SHOULD_NOT_LEAK_PATCH|diff --git|return xs\[0\]|Ran \\d+ tests?|OK\\n|stdout|stderr/i);
+      assert.doesNotMatch(body, /SHOULD_NOT_LEAK_PATCH|diff --git|return xs\[0\]|Ran \d+ tests?|OK(?:\r?\n|$)|stdout|stderr/i);
       assert.doesNotMatch(body, /edge-secret|csrf-token|agentoj\.sqlite|oauth_token|session_token|rawChainOfThought|ghp_123|abc123|supersecret|prod\.sqlite|shh456|plainsecret|plaintoken|bearer123|leak\/path|leaked_line|removed_line|sk-public|gh-public|AKIA1234567890ABCDEF|leak\.db|oracle|result_bundle|judge\.internal|container_id|user:pass|sk-123|eyJ|obfuscated-token/i);
     }
   });

@@ -90,8 +90,8 @@ OAJ is designed around coding-agent PRs:
 src/contracts/                Core DTOs, validators, public-output gates
 src/runner/local-runner.ts     Patch application, local demo runs, Docker hidden-oracle runs
 src/cli.ts                    OAJ CLI: catalog, run, export, PR judge
-src/adapters/humaneval.ts      HumanEval-style demo adapter seed
-src/adapters/mbpp.ts           MBPP-style adapter-only demo seed
+src/adapters/humaneval.ts      HumanEval full scored-hidden catalog plus demo fixtures
+src/adapters/mbpp.ts           MBPP subset-50 scored-hidden catalog plus demo fixtures
 src/api/                      SQLite-backed API, auth boundary, deployment checks
 src/storage/                  JSONL/SQLite/public export persistence
 src/golden-trust-slice.ts      Contract-level demo trust slice, intentionally demo-only
@@ -176,7 +176,11 @@ node --experimental-strip-types src/cli.ts export-web-data \
 
 The in-repo HumanEval and MBPP fixtures are **demo-public** OSS fixtures. They prove the adapter, runner, API, static export, and public-memory flow without claiming benchmark scores. Public demo fixtures may use visible tests and public summaries, but they are not sufficient for scored leaderboard claims.
 
-A problem can be **scored-hidden** only when its contract carries private oracle metadata: `scoringMode: "scored-hidden"` plus `oracleMetadata.kind` (`hidden-fixture` or `generated-private`), `hiddenRequired: true`, an opaque `oracleDescriptorHash`, and distinct `originalEvidenceId`/`rerunEvidenceId` values. The descriptor hash identifies the private oracle without exposing paths, cases, expected outputs, prompts, tokens, or bundles. Scored public judging must fail closed when this metadata is absent, when the oracle is public, or when the original run and independent rerun evidence are not distinct.
+The public HumanEval catalog also includes the full pinned OpenAI HumanEval surface as `humaneval-full-000` through `humaneval-full-163`. Those entries are **scored-hidden**: public metadata includes upstream ids, safe titles, and descriptor hashes only. Distinct original/rerun evidence ids stay in private descriptor/evidence-ledger state. The private official-test descriptor payload is loaded from a secret or encrypted artifact at judge time and is never committed to the repository.
+The public MBPP catalog includes a pinned `mbpp-subset-50-v1` scored-hidden slice using selected ids between `mbpp-full-003` and `mbpp-full-104`. Selection is ascending upstream task id with documented exclusions for non-direct assertions, imports, ambiguous signatures, or unclear simple descriptor generation. Public metadata exposes upstream ids, safe titles, and descriptor hashes only; private entry points and case descriptors stay in secrets/artifacts.
+
+
+A problem can be **scored-hidden** only when its public contract carries `scoringMode: "scored-hidden"` plus `oracleMetadata.kind` (`hidden-fixture` or `generated-private`), `hiddenRequired: true`, and an opaque `oracleDescriptorHash`. Distinct original/rerun evidence ids live in the private descriptor/evidence-ledger state, not in public catalog DTOs. The descriptor hash identifies the private oracle without exposing paths, cases, expected outputs, prompts, tokens, or bundles. Scored public judging must fail closed when public metadata is absent, when the descriptor is missing or hash-mismatched, when the oracle is public, or when the original run and independent rerun evidence are not distinct.
 
 Public catalog, Pages, PR comments, API responses, MCP output, and recording exports remain safe summaries only. They must not expose hidden oracle paths/cases, raw patch text, stdout/stderr, temp/worktree/DB paths, API origins, container identifiers, result bundles, prompt/token bundles, credentials, or private-key material.
 
@@ -200,7 +204,7 @@ GitHub PRs are the default public submission surface. Public PR patches are publ
 
 The repository includes three GitHub-native workflows under `.github/workflows/`:
 
-- `pr-judge.yml` runs on `pull_request` with `contents: read`, no comment/Pages write authority, per-PR concurrency cancellation, and a bounded job timeout; it also exposes a `workflow_dispatch` maintainer rerun that accepts an explicit `pr_head_sha` for secret-backed fork PR scoring without `pull_request_target`. It runs trusted default-branch judge code and checks out only PR `.agentoj` files as data. The judge requires Docker for untrusted PRs and runs with `--sandbox docker`. Scored hidden-oracle judging is descriptor-backed: the actual trusted judge step reads only `secrets.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON`, records the trusted PR head SHA supplied by the event or maintainer dispatch, rejects any contradictory envelope SHA, and fails closed when that private descriptor is unavailable.
+- `pr-judge.yml` runs on `pull_request` with `contents: read`, no comment/Pages write authority, per-PR concurrency cancellation, and a bounded job timeout; it also exposes a `workflow_dispatch` maintainer rerun that accepts an explicit `pr_head_sha` for secret-backed fork PR scoring without `pull_request_target`. It runs trusted default-branch judge code and checks out only PR `.agentoj` files as data. The judge requires Docker for untrusted PRs and runs with `--sandbox docker`. Scored hidden-oracle judging is descriptor-backed: the trusted workflow materializes the encrypted GitHub secret into `AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH`, validates it against the submitted problem identity and descriptor hash, records the trusted PR head SHA supplied by the event or maintainer dispatch, rejects any contradictory envelope SHA, and fails closed when that private descriptor is unavailable.
 - `pr-report.yml` is a trusted reporting lane. It reads only the `agentoj-pr-judge-summary` artifact, rejects oversized or schema-invalid sanitized summaries, then writes a PR comment only after validation.
 - `pages.yml` publishes GitHub Pages only from protected `main` or protected manual dispatch under the `github-pages` environment. It does not publish from labels, PR branches, fork context, or unmerged workflow runs.
 
@@ -216,41 +220,76 @@ The public judge is intentionally conservative:
 - **No-network/default sandbox**: adapter resources default to `networkPolicy: "blocked"` and untrusted PR judging requires the Docker sandbox path.
 - **Low concurrency**: the workflow executes one judge job per PR update or trusted manual rerun.
 - **Public output is sanitized**: reports and Pages exports reject raw patch text, stdout, stderr, temp/worktree/DB paths, secrets, raw reasoning, and full run bundles.
-- **Hidden-oracle gate**: scored benchmark claims require `scoringMode: "scored-hidden"` with private/generated oracle metadata, an opaque oracle descriptor hash, and distinct original/rerun evidence identifiers. Demo-public fixtures are excluded from scored claims.
+- **Hidden-oracle gate**: scored benchmark claims require `scoringMode: "scored-hidden"` with private/generated oracle metadata, an opaque oracle descriptor hash, and distinct original/rerun evidence identifiers in the private descriptor/evidence ledger. Demo-public fixtures are excluded from scored claims.
 - **Release redaction gate**: public DTOs, PR comments, Pages data, recording markdown, and MCP output must reject raw patches, stdout/stderr, temp paths, oracle paths/cases, result bundles, container/API-origin details, token bundles, credential URLs, cloud keys, JWTs, PEM/private keys, and markdown/HTML-obfuscated secrets.
+
+First-release scored limits are explicit and enforced before execution:
+
+| Surface | Patch bytes | Files | File bytes | Timeout | CPU | Memory | Extra gate |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| HumanEval | 100KB | 20 | 50KB | 60s | 1 | 512MB | Docker, hidden descriptor |
+| MBPP | 100KB | 20 | 50KB | 60s | 1 | 512MB | Docker, hidden descriptor |
+| QuixBugs Python | 150KB | 10 | 75KB | 120s | 1 | 1024MB | Docker, command hidden tests |
+| SWE-bench Lite | 500KB | 50 | 200KB | 45min | 2 | 6GB | implemented maintainer-triggered scoring, explicit PR head SHA, allowlisted instance, max_workers=1, 7-day artifacts |
+| SWE-bench Verified | 500KB | 50 | 200KB | 45min | 2 | 6GB | implemented maintainer-triggered scoring, separate Verified descriptor/allowlist, explicit PR head SHA, max_workers=1, 7-day artifacts |
+
+SWE-bench cache keys must include the official harness commit, dataset revision, and resolved harness image digest. Missing allowlists, missing image digests, stale cache identity, or untrusted-network requirements fail closed instead of running.
+Command-construction or dry-run checks are labeled unit-only evidence. They are useful for testing pinned argv, paths, and policy wiring, but benchmark acceptance requires live Docker scoring with matched private descriptors or the official SWE-bench harness report.
 
 ## Running a real scored benchmark
 
-For a live benchmark, configure hidden tests as a GitHub Actions secret. This is not an oracle server; it is a private JSON descriptor read only by the trusted judge workflow.
-
-Single-problem descriptor:
+For a live benchmark, configure private oracle descriptors as a GitHub Actions secret or decrypt them into `AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH` in a maintainer-only workflow. This is not an oracle server; it is a private JSON descriptor read only by the trusted judge workflow. HumanEval full scoring uses `python-function-tests` descriptors generated from the pinned OpenAI HumanEval JSONL (`6d43fb980f9fee3c892a914eda09951f772ad10d`, data hash `sha256:b796127e635a67f93fb35c04f4cb03cf06f38c8072ee7cee8833d7bee06979ef`). MBPP subset-50-v1 scoring uses `python-function-cases` descriptors generated from pinned Google Research MBPP sanitized data (`e3937aa2643402c194316d74917acee1dc4e8993`, data hash `sha256:ca95deaa9a01ef0a6f439f88bcf0dd3db3563d22f22aad6cae04ebb9a8d8c8e9`). QuixBugs Python subset-10-v1 uses private `command-hidden-tests` descriptors. SWE-bench Lite uses a private `swebench-upstream-harness` descriptor that binds the official dataset name/revision, harness commit, image digest, allowlisted instance id, prediction JSONL schema hash, and cache key; its evidence is the official harness report plus prediction JSONL hashes, not hidden test source. All scored surfaces are checked against public descriptor-hash manifests.
+The maintainer workflow materializes the encrypted GitHub secret into a temporary `AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH` with owner-only permissions, validates that descriptor against the submitted problem id/benchmark/adapter/upstream id/hash, and then passes only the path to the trusted judge step. Public artifacts receive only `pr-judge-summary.json`; descriptor plaintext, raw logs, patches, and result bundles are not uploaded.
+Synthetic non-scoring descriptor shape example (do not reuse these ids or cases for real scoring):
 
 ```json
 {
-  "problemId": "humaneval-001",
-  "cases": [
-    { "id": "case-1", "args": [[9, 8, 7]], "expected": 9 },
-    { "id": "case-2", "args": [["a", "b"]], "expected": "a" }
-  ]
+  "schemaVersion": 2,
+  "problemId": "example-private-problem",
+  "benchmarkId": "example-benchmark",
+  "adapterId": "example-python",
+  "upstreamTaskId": "Example/0",
+  "oracleKind": "python-function-cases",
+  "entryPoint": "candidate",
+  "cases": [{ "id": "redacted-case-id", "args": ["<private args>"], "expected": "<private expected>" }],
+  "evidencePolicy": {
+    "originalEvidenceId": "example-original-evidence",
+    "rerunEvidenceId": "example-rerun-evidence"
+  }
 }
 ```
 
-Multi-problem descriptor bundle:
+The public problem contract stores only the canonical descriptor hash, never the descriptor payload itself:
+
+```text
+sha256:<64 lowercase hex chars>
+```
+
+Multi-problem descriptor bundles use the same versioned descriptor objects:
 
 ```json
 {
+  "schemaVersion": 2,
   "descriptors": [
     {
-      "problemId": "humaneval-001",
-      "cases": [{ "id": "first-int", "args": [[9, 8, 7]], "expected": 9 }]
-    },
-    {
-      "problemId": "mbpp-001-adapter-only",
-      "cases": [{ "id": "upper", "args": ["abc"], "expected": "ABC" }]
+      "schemaVersion": 2,
+      "problemId": "example-private-problem",
+      "benchmarkId": "example-benchmark",
+      "adapterId": "example-python",
+      "upstreamTaskId": "Example/0",
+      "oracleKind": "python-function-cases",
+      "entryPoint": "candidate",
+      "cases": [{ "id": "redacted-case-id", "args": ["<private args>"], "expected": "<private expected>" }],
+      "evidencePolicy": {
+        "originalEvidenceId": "example-original-evidence",
+        "rerunEvidenceId": "example-rerun-evidence"
+      }
     }
   ]
 }
 ```
+
+QuixBugs command bundles and SWE-bench official harness metadata use the same private descriptor envelope with `oracleKind: "command-hidden-tests"` or `oracleKind: "swebench-upstream-harness"`. Those descriptor payloads remain private; public output may expose only their opaque descriptor hash.
 
 Set it with:
 
@@ -343,7 +382,7 @@ The release smoke keeps GitHub Pages as the public frontend, treats `production-
 - **MVP-1 Judge**: canonical patch application, Docker hidden-oracle sandbox execution, PR summary artifacts.
 - **MVP-2 Public surfaces**: static catalog, problem pages, leaderboard, discussion, review queues.
 - **MVP-3 Memory**: read-only public-memory search over reviewed recordings.
-- **MVP-4 Benchmarks**: expand beyond HumanEval-style and MBPP-style demo fixtures only after each adapter has license evidence, private oracle design, sandbox proof, and trust-core tests.
+- **MVP-4 Benchmarks**: HumanEval full, MBPP subset-50-v1, QuixBugs Python subset-10-v1, one SWE-bench Lite official-harness instance, and one separate SWE-bench Verified official-harness instance are implemented as scored-hidden surfaces.
 
 ## Name
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
-import { HUMANEVAL_ADAPTER, MBPP_ADAPTER } from "../src/index.ts";
+import { BENCHMARK_EXECUTION_POLICIES, HUMANEVAL_ADAPTER, MBPP_ADAPTER, validateBenchmarkExecutionRequest, validateSanitizedPrJudgeSummary } from "../src/index.ts";
 
 describe("PR-based operating model docs and cost controls", () => {
   it("documents public PR submissions, sanitized memory, and optional Azure/API", () => {
@@ -21,7 +21,7 @@ describe("PR-based operating model docs and cost controls", () => {
     assert.match(readme, /demo-public/);
     assert.match(readme, /scored-hidden/);
     assert.match(readme, /oracleDescriptorHash/);
-    assert.match(readme, /distinct `originalEvidenceId`\/`rerunEvidenceId`/);
+    assert.match(readme, /Distinct original\/rerun evidence ids stay in private descriptor\/evidence-ledger state/);
     assert.match(readme, /Scored public judging must fail closed/);
     assert.doesNotMatch(readme, /docker-fallback-local/);
     assert.doesNotMatch(app, /example-internal-host\\.internal/);
@@ -61,9 +61,6 @@ describe("PR-based operating model docs and cost controls", () => {
   it("documents and tests public judge abuse and cost bounds", () => {
     const readme = readFileSync("README.md", "utf8");
     const judge = readFileSync(".github/workflows/pr-judge.yml", "utf8");
-    const workflowTests = readFileSync("tests/github-workflows.test.ts", "utf8");
-    const contractTests = readFileSync("tests/contracts.test.ts", "utf8");
-    const cliTests = readFileSync("tests/adapters-cli-schema.test.ts", "utf8");
 
     assert.match(readme, /One active judge run per PR/);
     assert.match(readme, /cancel-in-progress: true/);
@@ -77,25 +74,67 @@ describe("PR-based operating model docs and cost controls", () => {
     assert.match(readme, /Hidden-oracle gate/);
     assert.match(readme, /Release redaction gate/);
     assert.match(readme, /credential URLs, cloud keys, JWTs, PEM\/private keys/);
-    assert.match(contractTests, /requires hidden or generated private oracle metadata/);
-    assert.match(contractTests, /rejects oracle, container, result-bundle, credential URL, key, JWT, and obfuscated public leaks/);
+    assert.match(readme, /QuixBugs Python \| 150KB \| 10 \| 75KB \| 120s \| 1 \| 1024MB/);
+    assert.match(readme, /SWE-bench Lite \| 500KB \| 50 \| 200KB \| 45min \| 2 \| 6GB/);
+    assert.match(readme, /max_workers=1/);
+    assert.match(readme, /official harness commit, dataset revision, and resolved harness image digest/);
+    assert.match(readme, /materializes the encrypted GitHub secret into a temporary `AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH`/);
+    assert.match(judge, /Materialize private descriptor secret to path/);
+    assert.match(judge, /AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH=\$descriptor_path/);
+    assert.match(readme, /Command-construction or dry-run checks are labeled unit-only evidence/);
+    assert.match(readme, /benchmark acceptance requires live Docker scoring/);
 
-    assert.match(judge, /group: agentoj-pr-judge-\$\{\{ github\.event\.pull_request\.number \|\| inputs\.pr_head_sha \}\}/);
-    assert.match(judge, /cancel-in-progress: true/);
-    assert.match(judge, /timeout-minutes: 10/);
-    assert.match(judge, /docker version/);
-    assert.match(judge, /--sandbox docker/);
-    assert.match(judge, /Smoke test Docker sandbox against trusted fixture/);
-    assert.match(judge, /\.github\/agentoj-smoke\/humaneval-001-pass\.diff/);
+    const workflowLines = judge.split(/\r?\n/).map((line) => line.trim());
+    assert.equal(workflowLines.includes("cancel-in-progress: true"), true);
+    assert.equal(workflowLines.includes("timeout-minutes: 45"), true);
+    assert.equal(workflowLines.some((line) => line === "contents: read"), true);
+    assert.equal(workflowLines.some((line) => line.includes("node --experimental-strip-types src/cli.ts judge-pr-submission")), true);
+    assert.equal(workflowLines.some((line) => line.includes("--sandbox docker")), true);
+    assert.equal(workflowLines.some((line) => line.includes(".github/agentoj-smoke/humaneval-001-pass.diff")), true);
 
-    assert.match(workflowTests, /cancel-in-progress: true/);
-    assert.match(workflowTests, /issues: write/);
-    assert.match(workflowTests, /timeout-minutes: 10/);
-    assert.match(workflowTests, /--sandbox docker/);
-    assert.match(contractTests, /rejects disabled problems, oversized patches, unsupported files, and path escapes/);
-    assert.match(contractTests, /rejects binary patches, symlink escapes, unsafe file modes, and oversized files/);
-    assert.match(contractTests, /rejects judge summaries with pass\/status mismatch or unbounded message payloads/);
-    assert.match(cliTests, /reports timed-out runner status/);
+    const quixbugsPolicy = BENCHMARK_EXECUTION_POLICIES.find((policy) => policy.benchmarkId === "quixbugs");
+    assert.deepEqual(quixbugsPolicy?.resources, { timeoutSeconds: 120, cpuCores: 1, memoryMb: 1024, networkPolicy: "blocked" });
+    assert.equal(quixbugsPolicy?.maxPatchBytes, 150_000);
+    assert.equal(quixbugsPolicy?.maxPatchFiles, 10);
+    assert.equal(quixbugsPolicy?.maxFileBytes, 75_000);
+
+    const sweLitePolicy = BENCHMARK_EXECUTION_POLICIES.find((policy) => policy.benchmarkId === "swe-bench-lite");
+    assert.deepEqual(sweLitePolicy?.resources, { timeoutSeconds: 2700, cpuCores: 2, memoryMb: 6144, networkPolicy: "blocked" });
+    assert.equal(sweLitePolicy?.maxWorkers, 1);
+    assert.equal(sweLitePolicy?.maintainerTriggeredOnly, true);
+    assert.equal(sweLitePolicy?.explicitPrHeadShaRequired, true);
+    assert.equal(sweLitePolicy?.allowlistedInstanceRequired, true);
+    assert.equal(sweLitePolicy?.artifactRetentionDays, 7);
+
+    const rejectedSwe = validateBenchmarkExecutionRequest({
+      benchmarkId: "swe-bench-lite",
+      resources: sweLitePolicy!.resources,
+      trigger: "pull_request",
+      maxWorkers: 2,
+      artifactRetentionDays: 30,
+    });
+    assert.equal(rejectedSwe.ok, false);
+    const rejectedCodes = rejectedSwe.issues.map((entry) => entry.code).join("\n");
+    assert.match(rejectedCodes, /benchmarkPolicy\.trigger\.maintainerRequired/);
+    assert.match(rejectedCodes, /benchmarkPolicy\.prHeadSha\.required/);
+    assert.match(rejectedCodes, /benchmarkPolicy\.instance\.required/);
+    assert.match(rejectedCodes, /benchmarkPolicy\.maxWorkers\.mismatch/);
+    assert.match(rejectedCodes, /benchmarkPolicy\.artifactRetention\.mismatch/);
+
+    const leakedSummary = validateSanitizedPrJudgeSummary({
+      schemaVersion: 1,
+      submissionId: "submission-leak",
+      problemId: "humaneval-full-000",
+      adapterId: "humaneval-python",
+      prHeadSha: "a".repeat(40),
+      status: "passed",
+      passFail: "pass",
+      runtimeMs: 1,
+      patchStats: { filesChanged: 1, locAdded: 1, locDeleted: 0 },
+      validationMessages: ["stdout leaked hidden oracle"],
+      resultHash: "sha256:" + "b".repeat(64),
+    });
+    assert.equal(leakedSummary.ok, false);
     assert.equal(HUMANEVAL_ADAPTER.defaultResources.networkPolicy, "blocked");
     assert.equal(MBPP_ADAPTER.defaultResources.networkPolicy, "blocked");
   });

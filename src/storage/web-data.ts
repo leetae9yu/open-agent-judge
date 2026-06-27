@@ -2,8 +2,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { assertPublicPayloadSafe, isPublicSlug, redactPublicText } from "../public-redaction.ts";
 import { isLeaderboardEligible, parsePublicMetricsJson, publicMetricsMatchPatchStats } from "../contracts/validators.ts";
-import { listAdapterRegistry } from "../adapters/registry.ts";
-import { listHumanEvalProblems } from "../adapters/humaneval.ts";
+import { listAdapterRegistry, listImplementedProblemCatalogs } from "../adapters/registry.ts";
 import { openAgentOjDatabase } from "./sqlite-store.ts";
 import type { LeaderboardEntry, PatchSubmission, RunnerResult } from "../contracts/types.ts";
 
@@ -27,11 +26,11 @@ export interface WebDataBundle {
 }
 
 function seedProblems(): WebProblemData[] {
-  return listHumanEvalProblems().map((problem) => ({
+  return listImplementedProblemCatalogs().map(({ benchmark, problem }) => ({
     id: problem.id,
     title: problem.title,
     benchmarkId: problem.benchmarkId,
-    benchmark: "HumanEval",
+    benchmark: benchmark.name,
     upstreamTaskId: problem.upstreamTaskId,
     hostingMode: problem.hostingMode,
     tags: problem.languageFrameworkTags,

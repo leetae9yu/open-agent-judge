@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { gunzipSync } from "node:zlib";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
@@ -9,22 +10,73 @@ import {
   HUMANEVAL_ADAPTER,
   HUMANEVAL_BENCHMARK,
   HUMANEVAL_PROBLEMS,
+  HUMANEVAL_DEMO_PROBLEMS,
+  HUMANEVAL_DESCRIPTOR_HASH_MANIFEST,
+  HUMANEVAL_SCORED_PROBLEMS,
+  HUMANEVAL_FULL_DESCRIPTOR_REVISION,
+  HUMANEVAL_UPSTREAM_DATA_SHA256,
+  HUMANEVAL_UPSTREAM_DATA_URL,
+  MBPP_DESCRIPTOR_HASH_MANIFEST,
   MBPP_ADAPTER,
   MBPP_BENCHMARK,
   MBPP_PROBLEMS,
+  MBPP_SCORED_PROBLEMS,
+  MBPP_SELECTION_EXCLUSIONS,
+  MBPP_SUBSET_DESCRIPTOR_REVISION,
+  MBPP_UPSTREAM_DATA_SHA256,
+  MBPP_UPSTREAM_DATA_URL,
+  QUIXBUGS_ADAPTER,
+  QUIXBUGS_BENCHMARK,
+  QUIXBUGS_DESCRIPTOR_HASH_MANIFEST,
+  QUIXBUGS_PROBLEMS,
+  QUIXBUGS_PYTHON_SUBSET_DESCRIPTOR_REVISION,
+  getQuixBugsProblem,
+  validateQuixBugsAdapterSeed,
+  SWEBENCH_LITE_ADAPTER,
+  SWEBENCH_LITE_BENCHMARK,
+  SWEBENCH_LITE_DESCRIPTOR_HASH_MANIFEST,
+  SWEBENCH_LITE_DESCRIPTOR_REVISION,
+  SWEBENCH_LITE_HARNESS_COMMIT,
+  SWEBENCH_LITE_HARNESS_IMAGE_DIGEST,
+  SWEBENCH_LITE_DATASET_NAME,
+  SWEBENCH_LITE_DATASET_REVISION,
+  SWEBENCH_LITE_PREDICTION_JSONL_SCHEMA_HASH,
+  SWEBENCH_LITE_PROBLEMS,
+  getSwebenchLiteProblem,
+  validateSwebenchLiteAdapterSeed,
+  SWEBENCH_VERIFIED_ADAPTER,
+  SWEBENCH_VERIFIED_BENCHMARK,
+  SWEBENCH_VERIFIED_DESCRIPTOR_HASH_MANIFEST,
+  SWEBENCH_VERIFIED_DESCRIPTOR_REVISION,
+  SWEBENCH_VERIFIED_HARNESS_COMMIT,
+  SWEBENCH_VERIFIED_HARNESS_IMAGE_DIGEST,
+  SWEBENCH_VERIFIED_DATASET_NAME,
+  SWEBENCH_VERIFIED_DATASET_REVISION,
+  SWEBENCH_VERIFIED_PREDICTION_JSONL_SCHEMA_HASH,
+  SWEBENCH_VERIFIED_PROBLEMS,
+  getSwebenchVerifiedProblem,
+  validateSwebenchVerifiedAdapterSeed,
   createPatchSubmission,
   getImplementedProblemCatalog,
   getHumanEvalProblem,
   getMbppProblem,
   dockerRunArgs,
+  dockerSwebenchRunArgs,
+  dockerSwebenchPullArgs,
+  swebenchResolvedEvidenceFromReport,
+  validateSwebenchPredictionJsonl,
+  swebenchHostHarnessRunArgs,
   isPinnedDockerImageDigest,
+  privateOracleStdout,
   runLocalPatchVerification,
   runHiddenOraclePatchVerification,
   readRunBundles,
   openAgentOjDatabase,
   validateHumanEvalAdapterSeed,
   validateMbppAdapterSeed,
+  selectCanonicalPrivateOracleDescriptor,
   validateSanitizedPrJudgeSummary,
+  validatePrivateOracleDescriptor,
 } from "../src/index.ts";
 import type { Problem } from "../src/index.ts";
 import { runCli } from "../src/cli.ts";
@@ -36,6 +88,18 @@ const passingPatch = [
   " def candidate(xs):",
   "-    return None",
   "+    return xs[0]",
+  "",
+].join("\n");
+const alternateEntryPointPatch = [
+  "diff --git a/solution.py b/solution.py",
+  "--- a/solution.py",
+  "+++ b/solution.py",
+  "@@ -1,2 +1,5 @@",
+  "+def solve(xs):",
+  "+    return xs[0]",
+  "+",
+  " def candidate(xs):",
+  "     return None",
   "",
 ].join("\n");
 const largestPatch = [
@@ -159,12 +223,137 @@ const importHookTamperingPatch = [
   "",
 ].join("\n");
 
-function sha256(value: string): string {
+function sha256(value: string | Buffer): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
+interface HumanEvalUpstreamTask {
+  task_id: string;
+  entry_point: string;
+  test: string;
+}
+
+interface MbppUpstreamTask {
+  task_id: number;
+  prompt: string;
+  code: string;
+  test_imports: string[];
+  test_list: string[];
+}
+
+
+async function fetchPinnedHumanEvalTasks(): Promise<HumanEvalUpstreamTask[]> {
+  const response = await fetch(HUMANEVAL_UPSTREAM_DATA_URL);
+  assert.equal(response.ok, true);
+  const raw = Buffer.from(await response.arrayBuffer());
+  assert.equal(`sha256:${sha256(raw)}`, HUMANEVAL_UPSTREAM_DATA_SHA256);
+  return gunzipSync(raw)
+    .toString("utf8")
+    .trim()
+    .split(/\r?\n/)
+    .map((line) => JSON.parse(line) as HumanEvalUpstreamTask);
+}
+
+async function fetchPinnedMbppTasks(): Promise<MbppUpstreamTask[]> {
+  const response = await fetch(MBPP_UPSTREAM_DATA_URL);
+  assert.equal(response.ok, true);
+  const raw = Buffer.from(await response.arrayBuffer());
+  assert.equal(`sha256:${sha256(raw)}`, MBPP_UPSTREAM_DATA_SHA256);
+  return JSON.parse(raw.toString("utf8")) as MbppUpstreamTask[];
+}
+
+function officialMbppEvidencePolicy(problemId: string): { originalEvidenceId: string; rerunEvidenceId: string } {
+  return {
+    originalEvidenceId: `${problemId}-private-original-evidence`,
+    rerunEvidenceId: `${problemId}-private-rerun-evidence`,
+  };
+}
+
+function officialMbppDescriptor(problem: Problem, entryPoint: string, cases: Array<{ id: string; args: unknown[]; expected: unknown }>): string {
+  return JSON.stringify({
+    schemaVersion: 2,
+    problemId: problem.id,
+    benchmarkId: problem.benchmarkId,
+    adapterId: problem.adapterId,
+    upstreamTaskId: problem.upstreamTaskId,
+    oracleKind: "python-function-cases",
+    entryPoint,
+    cases,
+    evidencePolicy: officialMbppEvidencePolicy(problem.id),
+    descriptorRevision: MBPP_SUBSET_DESCRIPTOR_REVISION,
+  });
+}
+function extractMbppCasesWithPython(task: MbppUpstreamTask, entryPoint: string): Array<{ id: string; args: unknown[]; expected: unknown }> {
+  const script = `
+import ast
+import json
+import sys
+
+payload = json.load(sys.stdin)
+cases = []
+for index, source in enumerate(payload["test_list"]):
+    parsed = ast.parse(source)
+    if len(parsed.body) != 1 or not isinstance(parsed.body[0], ast.Assert):
+        raise ValueError(f"unsupported MBPP assert: {source}")
+    assertion = parsed.body[0].test
+    if not isinstance(assertion, ast.Compare) or len(assertion.ops) != 1 or not isinstance(assertion.ops[0], ast.Eq) or len(assertion.comparators) != 1:
+        raise ValueError(f"unsupported MBPP comparison: {source}")
+    call = assertion.left
+    if not isinstance(call, ast.Call) or not isinstance(call.func, ast.Name) or call.func.id != payload["entryPoint"] or call.keywords:
+        raise ValueError(f"unsupported MBPP call target: {source}")
+    cases.append({
+        "id": f"mbpp-{payload['task_id']}-case-{index + 1}",
+        "args": [ast.literal_eval(arg) for arg in call.args],
+        "expected": ast.literal_eval(assertion.comparators[0]),
+    })
+json.dump(cases, sys.stdout, separators=(",", ":"))
+`;
+  const result = spawnSync("python3", ["-c", script], {
+    input: JSON.stringify({ task_id: task.task_id, entryPoint, test_list: task.test_list }),
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr);
+  return JSON.parse(result.stdout) as Array<{ id: string; args: unknown[]; expected: unknown }>;
+}
+
+function officialHumanEvalEvidencePolicy(problemId: string): { originalEvidenceId: string; rerunEvidenceId: string } {
+  return {
+    originalEvidenceId: `${problemId}-private-original-evidence`,
+    rerunEvidenceId: `${problemId}-private-rerun-evidence`,
+  };
+}
+
+function officialHumanEvalDescriptor(problem: Problem, task: HumanEvalUpstreamTask): string {
+  return JSON.stringify({
+    schemaVersion: 2,
+    problemId: problem.id,
+    benchmarkId: problem.benchmarkId,
+    adapterId: problem.adapterId,
+    upstreamTaskId: task.task_id,
+    oracleKind: "python-function-tests",
+    entryPoint: task.entry_point,
+    testSource: task.test,
+    testSourceHash: `sha256:${sha256(task.test)}`,
+    evidencePolicy: officialHumanEvalEvidencePolicy(problem.id),
+    descriptorRevision: HUMANEVAL_FULL_DESCRIPTOR_REVISION,
+  });
+}
+
 function withPrivateOracle<T>(problem: Problem, cases: Array<{ id: string; args: unknown[]; expected: unknown }>, callback: (problem: Problem) => T): T {
-  const descriptor = JSON.stringify({ problemId: problem.id, cases });
+  const descriptor = JSON.stringify({
+    schemaVersion: 2,
+    problemId: problem.id,
+    benchmarkId: problem.benchmarkId,
+    adapterId: problem.adapterId,
+    upstreamTaskId: problem.upstreamTaskId,
+    oracleKind: "python-function-cases",
+    entryPoint: "candidate",
+    cases,
+    evidencePolicy: {
+      originalEvidenceId: `${problem.id}-original-private-evidence`,
+      rerunEvidenceId: `${problem.id}-rerun-private-evidence`,
+    },
+  });
   const previousJson = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
   const previousPath = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH;
   process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = descriptor;
@@ -195,6 +384,58 @@ function withPrivateOracle<T>(problem: Problem, cases: Array<{ id: string; args:
   }
 }
 
+function withVersionedPrivateOracle<T>(problem: Problem, cases: Array<{ id: string; args: unknown[]; expected: unknown }>, callback: (problem: Problem) => T, entryPoint = "candidate"): T {
+  const descriptor = JSON.stringify({
+    schemaVersion: 2,
+    problemId: problem.id,
+    benchmarkId: problem.benchmarkId,
+    adapterId: problem.adapterId,
+    upstreamTaskId: problem.upstreamTaskId,
+    oracleKind: "python-function-cases",
+    entryPoint,
+    cases,
+    evidencePolicy: {
+      originalEvidenceId: `${problem.id}-original-v2-evidence`,
+      rerunEvidenceId: `${problem.id}-rerun-v2-evidence`,
+    },
+  });
+  const previousJson = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+  const previousPath = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH;
+  const previousUnsafeLocal = process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE;
+  process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = descriptor;
+  delete process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH;
+  process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE = "1";
+  try {
+    return callback({
+      ...problem,
+      scoringMode: "scored-hidden",
+      oracleMetadata: {
+        kind: "generated-private",
+        hiddenRequired: true,
+        oracleDescriptorHash: `sha256:${sha256(descriptor)}`,
+        originalEvidenceId: `${problem.id}-original-v2-evidence`,
+        rerunEvidenceId: `${problem.id}-rerun-v2-evidence`,
+      },
+    });
+  } finally {
+    if (previousJson === undefined) {
+      delete process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+    } else {
+      process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = previousJson;
+    }
+    if (previousPath === undefined) {
+      delete process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH;
+    } else {
+      process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH = previousPath;
+    }
+    if (previousUnsafeLocal === undefined) {
+      delete process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE;
+    } else {
+      process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE = previousUnsafeLocal;
+    }
+  }
+}
+
 function prSubmissionEnvelope(problemId: string, adapterId: string, patch: string) {
   return {
     schemaVersion: 1,
@@ -221,30 +462,955 @@ const judgeOptions = {
 
 
 describe("HumanEval adapter seed", () => {
-  it("pins a permissive upstream benchmark and validates the seeded problems", () => {
+  it("pins a permissive upstream benchmark and validates the seeded problems", async () => {
     assert.doesNotThrow(() => validateHumanEvalAdapterSeed());
     assert.equal(HUMANEVAL_BENCHMARK.licenseId, "MIT");
     assert.equal(HUMANEVAL_BENCHMARK.legalStatus, "approved");
     assert.equal(HUMANEVAL_ADAPTER.supportedHostingModes.includes("hosted"), true);
     assert.equal(HUMANEVAL_ADAPTER.supportedHostingModes.includes("adapter-only"), true);
-    assert.equal(HUMANEVAL_PROBLEMS.length, 3);
+    assert.equal(HUMANEVAL_DEMO_PROBLEMS.length, 3);
+    assert.equal(HUMANEVAL_SCORED_PROBLEMS.length, 164);
+    assert.equal(HUMANEVAL_PROBLEMS.length, 167);
+    assert.equal(HUMANEVAL_DESCRIPTOR_HASH_MANIFEST.length, 164);
     assert.equal(getHumanEvalProblem("humaneval-001")?.upstreamTaskId, "HumanEval/1");
+    assert.equal(getHumanEvalProblem("humaneval-full-000")?.upstreamTaskId, "HumanEval/0");
+    assert.equal(getHumanEvalProblem("humaneval-full-163")?.upstreamTaskId, "HumanEval/163");
+    assert.equal(getHumanEvalProblem("humaneval-full-000")?.scoringMode, "scored-hidden");
+    assert.match(getHumanEvalProblem("humaneval-full-000")?.oracleMetadata?.oracleDescriptorHash ?? "", /^sha256:[0-9a-f]{64}$/);
+    assert.equal("originalEvidenceId" in (getHumanEvalProblem("humaneval-full-000")?.oracleMetadata ?? {}), false);
+    assert.equal("rerunEvidenceId" in (getHumanEvalProblem("humaneval-full-000")?.oracleMetadata ?? {}), false);
     assert.deepEqual(getHumanEvalProblem("humaneval-001")?.editableFilePaths, ["solution.py"]);
     assert.equal(getHumanEvalProblem("humaneval-003-adapter-only")?.hostingMode, "adapter-only");
+    const tasks = await fetchPinnedHumanEvalTasks();
+    assert.equal(tasks.length, 164);
+    const seenHashes = new Set<string>();
+    for (const [index, entry] of HUMANEVAL_DESCRIPTOR_HASH_MANIFEST.entries()) {
+      const id = `humaneval-full-${String(index).padStart(3, "0")}`;
+      const problem = getHumanEvalProblem(id);
+      const task = tasks[index];
+      assert.ok(problem);
+      assert.equal(entry.problemId, id);
+      assert.equal(problem.id, entry.problemId);
+      assert.equal(problem.upstreamTaskId, task.task_id);
+      assert.equal(entry.upstreamTaskId, task.task_id);
+      assert.equal(entry.entryPoint, task.entry_point);
+      assert.equal(problem.scoringMode, "scored-hidden");
+      assert.equal(problem.oracleMetadata?.hiddenRequired, true);
+      assert.equal(problem.oracleMetadata?.oracleDescriptorHash, entry.oracleDescriptorHash);
+      assert.equal("originalEvidenceId" in entry, false);
+      assert.equal("rerunEvidenceId" in entry, false);
+      assert.match(entry.oracleDescriptorHash, /^sha256:[0-9a-f]{64}$/);
+      assert.equal(seenHashes.has(entry.oracleDescriptorHash), false);
+      seenHashes.add(entry.oracleDescriptorHash);
+    }
   });
 });
 
-describe("MBPP adapter-only seed", () => {
+describe("MBPP adapter seed and subset-50 scored catalog", () => {
   it("pins Apache-2.0 metadata and validates adapter-only seeded problems", () => {
     assert.doesNotThrow(() => validateMbppAdapterSeed());
     assert.equal(MBPP_BENCHMARK.licenseId, "Apache-2.0");
     assert.equal(MBPP_BENCHMARK.legalStatus, "approved");
-    assert.equal(MBPP_BENCHMARK.defaultHostingMode, "adapter-only");
-    assert.deepEqual(MBPP_ADAPTER.supportedHostingModes, ["adapter-only"]);
+    assert.equal(MBPP_BENCHMARK.defaultHostingMode, "hosted");
+    assert.deepEqual(MBPP_ADAPTER.supportedHostingModes, ["adapter-only", "hosted"]);
     assert.equal(MBPP_ADAPTER.defaultResources.networkPolicy, "blocked");
-    assert.equal(MBPP_PROBLEMS.length, 3);
+    assert.equal(MBPP_PROBLEMS.length, 53);
     assert.equal(getMbppProblem("mbpp-001-adapter-only")?.upstreamTaskId, "MBPP/adapter-seed-001");
     assert.equal(getMbppProblem("mbpp-001-adapter-only")?.hostingMode, "adapter-only");
+    assert.equal(MBPP_SCORED_PROBLEMS.length, 50);
+    assert.equal(MBPP_DESCRIPTOR_HASH_MANIFEST.length, 50);
+    assert.equal(getMbppProblem("mbpp-full-003")?.scoringMode, "scored-hidden");
+    assert.equal(getMbppProblem("mbpp-full-104")?.upstreamTaskId, "MBPP/104");
+    assert.equal(MBPP_SELECTION_EXCLUSIONS.some((entry) => entry.taskId === 2 && /direct selected function/.test(entry.reason)), true);
+    assert.equal(MBPP_SELECTION_EXCLUSIONS.some((entry) => entry.taskId === 82 && /imports/.test(entry.reason)), true);
+  });
+
+  it("pins MBPP subset-50-v1 to real upstream tasks and keeps private cases out of public metadata", async () => {
+    const tasks = await fetchPinnedMbppTasks();
+    const byId = new Map(tasks.map((task) => [task.task_id, task]));
+    const seenHashes = new Set<string>();
+    for (const entry of MBPP_DESCRIPTOR_HASH_MANIFEST) {
+      const problem = getMbppProblem(entry.problemId);
+      const task = byId.get(entry.taskId);
+      assert.ok(problem);
+      assert.ok(task);
+      assert.equal(problem.upstreamTaskId, `MBPP/${entry.taskId}`);
+      assert.equal(entry.upstreamTaskId, `MBPP/${entry.taskId}`);
+      assert.equal(problem.scoringMode, "scored-hidden");
+      assert.equal(problem.oracleMetadata?.hiddenRequired, true);
+      assert.equal(problem.oracleMetadata?.oracleDescriptorHash, entry.oracleDescriptorHash);
+      assert.equal("originalEvidenceId" in entry, false);
+      assert.equal("rerunEvidenceId" in entry, false);
+      assert.equal("test_list" in entry, false);
+      assert.equal("code" in entry, false);
+      assert.match(entry.oracleDescriptorHash, /^sha256:[0-9a-f]{64}$/);
+      assert.equal(seenHashes.has(entry.oracleDescriptorHash), false);
+      seenHashes.add(entry.oracleDescriptorHash);
+      const cases = extractMbppCasesWithPython(task, entry.entryPoint);
+      assert.equal(entry.oracleDescriptorHash, `sha256:${sha256(officialMbppDescriptor(problem, entry.entryPoint, cases))}`);
+    }
+  });
+});
+
+function officialQuixBugsCommandDescriptor(problem: Problem, testSource: string): string {
+  const testSourceHash = `sha256:${sha256(testSource)}`;
+  return JSON.stringify({
+    schemaVersion: 2,
+    problemId: problem.id,
+    benchmarkId: problem.benchmarkId,
+    adapterId: problem.adapterId,
+    upstreamTaskId: problem.upstreamTaskId,
+    oracleKind: "command-hidden-tests",
+    commandId: "pytest-hidden",
+    allowedTargets: problem.editableFilePaths,
+    hiddenTestBundleHash: testSourceHash,
+    expectedExitCode: 0,
+    testSource,
+    testSourceHash,
+    evidencePolicy: {
+      originalEvidenceId: `${problem.id}-private-original-evidence`,
+      rerunEvidenceId: `${problem.id}-private-rerun-evidence`,
+    },
+    descriptorRevision: QUIXBUGS_PYTHON_SUBSET_DESCRIPTOR_REVISION,
+  });
+}
+
+const quixBugsSyntheticHiddenTestSource = [
+  "from python_programs.bitcount import bitcount",
+  "",
+  "def test_synthetic_bitcount_command_hidden_cases():",
+  "    assert bitcount(0) == 0",
+  "    assert bitcount(1) == 1",
+  "    assert bitcount(7) == 3",
+  "    assert bitcount(128) == 1",
+  "",
+].join("\n");
+
+const quixBugsBitcountPatch = [
+  "diff --git a/python_programs/bitcount.py b/python_programs/bitcount.py",
+  "--- a/python_programs/bitcount.py",
+  "+++ b/python_programs/bitcount.py",
+  "@@ -1,6 +1,6 @@",
+  " def bitcount(n):",
+  "     count = 0",
+  "     while n:",
+  "-        n ^= n - 1",
+  "+        n &= n - 1",
+  "         count += 1",
+  "     return count",
+  "",
+].join("\n");
+
+const quixBugsNonAllowlistedPatch = [
+  "diff --git a/python_programs/bitcount_test.py b/python_programs/bitcount_test.py",
+  "--- a/python_programs/bitcount_test.py",
+  "+++ b/python_programs/bitcount_test.py",
+  "@@ -0,0 +1,1 @@",
+  "+assert False",
+  "",
+].join("\n");
+const quixBugsEarlyExitPatch = [
+  "diff --git a/python_programs/bitcount.py b/python_programs/bitcount.py",
+  "--- a/python_programs/bitcount.py",
+  "+++ b/python_programs/bitcount.py",
+  "@@ -1,3 +1,6 @@",
+  "+import os",
+  "+os._exit(0)",
+  "+",
+  " def bitcount(n):",
+  "     count = 0",
+  "     while n:",
+  "",
+].join("\n");
+const quixBugsForgedReportPatch = [
+  "diff --git a/python_programs/bitcount.py b/python_programs/bitcount.py",
+  "--- a/python_programs/bitcount.py",
+  "+++ b/python_programs/bitcount.py",
+  "@@ -1,3 +1,10 @@",
+  "+import glob",
+  "+import os",
+  "+import pathlib",
+  "+for report in glob.glob('/tmp/agentoj-hidden-*/pytest-session.json'):",
+  "+    pathlib.Path(report).write_text('{\"exitstatus\":0,\"testscollected\":1,\"testsfailed\":0}')",
+  "+os._exit(0)",
+  "+",
+  " def bitcount(n):",
+  "     count = 0",
+  "     while n:",
+  "",
+].join("\n");
+
+describe("QuixBugs Python subset-10 scored catalog", () => {
+  it("pins real QuixBugs Python metadata and keeps command-hidden descriptors private", () => {
+    assert.doesNotThrow(() => validateQuixBugsAdapterSeed());
+    assert.equal(QUIXBUGS_BENCHMARK.upstreamCommitOrVersion, "4257f44b0ff1181dedaedee6a447e133219fcebf");
+    assert.equal(QUIXBUGS_ADAPTER.supportedHostingModes.includes("hosted"), true);
+    assert.equal(QUIXBUGS_PROBLEMS.length, 10);
+    assert.equal(QUIXBUGS_DESCRIPTOR_HASH_MANIFEST.length, 10);
+    assert.deepEqual(QUIXBUGS_DESCRIPTOR_HASH_MANIFEST.map((entry) => entry.upstreamTaskId).slice(0, 3), ["bitcount", "breadth_first_search", "bucketsort"]);
+    for (const entry of QUIXBUGS_DESCRIPTOR_HASH_MANIFEST) {
+      const problem = getQuixBugsProblem(entry.problemId);
+      assert.ok(problem);
+      assert.equal(problem.scoringMode, "scored-hidden");
+      assert.deepEqual(problem.editableFilePaths, [entry.editableFilePath]);
+      assert.equal(problem.oracleMetadata?.oracleDescriptorHash, entry.oracleDescriptorHash);
+      assert.equal("testSource" in entry, false);
+      assert.equal("cases" in entry, false);
+      assert.match(entry.oracleDescriptorHash, /^sha256:[0-9a-f]{64}$/);
+    }
+  });
+  it("validates QuixBugs private descriptor bundles when the secret artifact is mounted", () => {
+    const rawBundle = process.env.AGENTOJ_QUIXBUGS_PRIVATE_DESCRIPTOR_BUNDLE_JSON;
+    if (!rawBundle) {
+      assert.equal(QUIXBUGS_DESCRIPTOR_HASH_MANIFEST.every((entry) => !("testSource" in entry) && !("hiddenTestBundleHash" in entry)), true);
+      return;
+    }
+
+    const parsedBundle = JSON.parse(rawBundle) as unknown;
+    let checked = 0;
+    for (const entry of QUIXBUGS_DESCRIPTOR_HASH_MANIFEST) {
+      const problem = getQuixBugsProblem(entry.problemId);
+      assert.ok(problem);
+      const selected = selectCanonicalPrivateOracleDescriptor(
+        {
+          problemId: problem.id,
+          benchmarkId: problem.benchmarkId,
+          adapterId: problem.adapterId,
+          upstreamTaskId: problem.upstreamTaskId,
+          expectedOracleDescriptorHash: entry.oracleDescriptorHash,
+        },
+        parsedBundle,
+      );
+      assert.ok(selected);
+      assert.equal(`sha256:${sha256(selected.canonicalJson)}`, entry.oracleDescriptorHash);
+      const descriptor = JSON.parse(selected.canonicalJson) as unknown;
+      assert.equal(
+        validatePrivateOracleDescriptor(descriptor, {
+          problemId: problem.id,
+          benchmarkId: problem.benchmarkId,
+          adapterId: problem.adapterId,
+          upstreamTaskId: problem.upstreamTaskId,
+        }).ok,
+        true,
+      );
+      checked += 1;
+    }
+    assert.equal(checked, 10);
+  });
+
+
+  it("runs a synthetic QuixBugs command-hidden descriptor and rejects non-allowlisted targets", () => {
+    const catalogProblem = getQuixBugsProblem("quixbugs-python-bitcount");
+    assert.ok(catalogProblem);
+    const smokeProblem: Problem = {
+      ...catalogProblem,
+      id: "quixbugs-python-command-hidden-smoke",
+      oracleMetadata: {
+        kind: "generated-private",
+        hiddenRequired: true,
+        oracleDescriptorHash: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      },
+    };
+    const descriptor = officialQuixBugsCommandDescriptor(smokeProblem, quixBugsSyntheticHiddenTestSource);
+    const problem: Problem = {
+      ...smokeProblem,
+      oracleMetadata: {
+        kind: "generated-private",
+        hiddenRequired: true,
+        oracleDescriptorHash: `sha256:${sha256(descriptor)}`,
+      },
+    };
+
+    const previousJson = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+    const previousUnsafeLocal = process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE;
+    process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = descriptor;
+    process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE = "1";
+    try {
+      const passed = runHiddenOraclePatchVerification({
+        benchmark: QUIXBUGS_BENCHMARK,
+        adapter: QUIXBUGS_ADAPTER,
+        problem,
+        submission: createPatchSubmission(problem, "quixbugs-bitcount-command-hidden-pass"),
+        patch: quixBugsBitcountPatch,
+        fixtureDir: "fixtures/quixbugs-python-bitcount",
+      });
+      assert.equal(passed.result.passFail, "pass");
+      assert.equal(passed.job.scoringStatus, "scored");
+      assert.equal(passed.stdout, "");
+      assert.equal(passed.job.oracleDescriptorHash, problem.oracleMetadata?.oracleDescriptorHash);
+
+      const failed = runHiddenOraclePatchVerification({
+        benchmark: QUIXBUGS_BENCHMARK,
+        adapter: QUIXBUGS_ADAPTER,
+        problem,
+        submission: createPatchSubmission(problem, "quixbugs-bitcount-command-hidden-fail"),
+        patch: quixBugsNonAllowlistedPatch,
+        fixtureDir: "fixtures/quixbugs-python-bitcount",
+      });
+      assert.equal(failed.result.passFail, "fail");
+      assert.match(failed.stderr, /not editable|not allowed by private descriptor/);
+
+      const bypass = runHiddenOraclePatchVerification({
+        benchmark: QUIXBUGS_BENCHMARK,
+        adapter: QUIXBUGS_ADAPTER,
+        problem,
+        submission: createPatchSubmission(problem, "quixbugs-bitcount-command-hidden-early-exit"),
+        patch: quixBugsEarlyExitPatch,
+        fixtureDir: "fixtures/quixbugs-python-bitcount",
+      });
+      assert.equal(bypass.result.passFail, "fail");
+      assert.match(bypass.stderr, /command hidden oracle failed/);
+      const forgedReportBypass = runHiddenOraclePatchVerification({
+        benchmark: QUIXBUGS_BENCHMARK,
+        adapter: QUIXBUGS_ADAPTER,
+        problem,
+        submission: createPatchSubmission(problem, "quixbugs-bitcount-command-hidden-forged-report"),
+        patch: quixBugsForgedReportPatch,
+        fixtureDir: "fixtures/quixbugs-python-bitcount",
+      });
+      assert.equal(forgedReportBypass.result.passFail, "fail");
+      assert.match(forgedReportBypass.stderr, /command hidden oracle failed/);
+      const dockerArgs = dockerRunArgs(
+        {
+          benchmark: QUIXBUGS_BENCHMARK,
+          adapter: QUIXBUGS_ADAPTER,
+          problem,
+          submission: createPatchSubmission(problem, "quixbugs-bitcount-docker-args"),
+          patch: quixBugsBitcountPatch,
+        },
+        "fixtures/quixbugs-python-bitcount",
+      );
+      const dockerArgvJson = JSON.stringify(dockerArgs);
+      assert.equal(dockerArgvJson.includes(quixBugsSyntheticHiddenTestSource), false);
+      assert.equal(dockerArgvJson.includes("private-original-evidence"), false);
+      assert.equal(dockerArgvJson.includes("bitcount_test.py"), false);
+      assert.ok(dockerArgs.some((arg) => arg.endsWith("python_programs/bitcount.py:/target0:ro,z")));
+    } finally {
+      if (previousJson === undefined) {
+        delete process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+      } else {
+        process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = previousJson;
+      }
+      if (previousUnsafeLocal === undefined) {
+        delete process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE;
+      } else {
+        process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE = previousUnsafeLocal;
+      }
+    }
+  });
+});
+
+function officialSwebenchLiteDescriptor(problem: Problem): string {
+  const entry = SWEBENCH_LITE_DESCRIPTOR_HASH_MANIFEST.find((candidate) => candidate.problemId === problem.id);
+  assert.ok(entry);
+  return JSON.stringify({
+    schemaVersion: 2,
+    problemId: problem.id,
+    benchmarkId: problem.benchmarkId,
+    adapterId: problem.adapterId,
+    upstreamTaskId: problem.upstreamTaskId,
+    oracleKind: "swebench-upstream-harness",
+    datasetName: SWEBENCH_LITE_DATASET_NAME,
+    datasetRevision: SWEBENCH_LITE_DATASET_REVISION,
+    split: "test",
+    instanceId: entry.instanceId,
+    repo: entry.repo,
+    baseCommit: entry.baseCommit,
+    harnessCommit: SWEBENCH_LITE_HARNESS_COMMIT,
+    harnessImageDigest: SWEBENCH_LITE_HARNESS_IMAGE_DIGEST,
+    predictionJsonlSchemaHash: SWEBENCH_LITE_PREDICTION_JSONL_SCHEMA_HASH,
+    cacheKey: `swebench:${SWEBENCH_LITE_HARNESS_COMMIT}:${SWEBENCH_LITE_DATASET_REVISION}:${SWEBENCH_LITE_HARNESS_IMAGE_DIGEST}`,
+    evidencePolicy: {
+      originalEvidenceId: `${problem.id}-original-harness-log`,
+      rerunEvidenceId: `${problem.id}-rerun-harness-log`,
+    },
+    descriptorRevision: SWEBENCH_LITE_DESCRIPTOR_REVISION,
+  });
+}
+function officialSwebenchVerifiedDescriptor(problem: Problem): string {
+  const entry = SWEBENCH_VERIFIED_DESCRIPTOR_HASH_MANIFEST.find((candidate) => candidate.problemId === problem.id);
+  assert.ok(entry);
+  return JSON.stringify({
+    schemaVersion: 2,
+    problemId: problem.id,
+    benchmarkId: problem.benchmarkId,
+    adapterId: problem.adapterId,
+    upstreamTaskId: problem.upstreamTaskId,
+    oracleKind: "swebench-upstream-harness",
+    datasetName: SWEBENCH_VERIFIED_DATASET_NAME,
+    datasetRevision: SWEBENCH_VERIFIED_DATASET_REVISION,
+    split: "test",
+    instanceId: entry.instanceId,
+    repo: entry.repo,
+    baseCommit: entry.baseCommit,
+    harnessCommit: SWEBENCH_VERIFIED_HARNESS_COMMIT,
+    harnessImageDigest: SWEBENCH_VERIFIED_HARNESS_IMAGE_DIGEST,
+    predictionJsonlSchemaHash: SWEBENCH_VERIFIED_PREDICTION_JSONL_SCHEMA_HASH,
+    cacheKey: `swebench:${SWEBENCH_VERIFIED_HARNESS_COMMIT}:${SWEBENCH_VERIFIED_DATASET_REVISION}:${SWEBENCH_VERIFIED_HARNESS_IMAGE_DIGEST}`,
+    evidencePolicy: {
+      originalEvidenceId: `${problem.id}-original-harness-log`,
+      rerunEvidenceId: `${problem.id}-rerun-harness-log`,
+    },
+    descriptorRevision: SWEBENCH_VERIFIED_DESCRIPTOR_REVISION,
+  });
+}
+
+const swebenchLitePatch = [
+  "diff --git a/astropy/modeling/separable.py b/astropy/modeling/separable.py",
+  "--- a/astropy/modeling/separable.py",
+  "+++ b/astropy/modeling/separable.py",
+  "@@ -242,1 +242,1 @@",
+  "-        cright[-right.shape[0]:, -right.shape[1]:] = 1",
+  "+        cright[-right.shape[0]:, -right.shape[1]:] = right",
+  "",
+].join("\n");
+
+describe("SWE-bench Lite official harness scored surface", () => {
+  it("pins a real official-harness Lite instance with private descriptor hash only", () => {
+    assert.doesNotThrow(() => validateSwebenchLiteAdapterSeed());
+    assert.equal(SWEBENCH_LITE_BENCHMARK.id, "swe-bench-lite");
+    assert.equal(SWEBENCH_LITE_BENCHMARK.upstreamCommitOrVersion, SWEBENCH_LITE_HARNESS_COMMIT);
+    assert.equal(SWEBENCH_LITE_DATASET_REVISION, "6ec7bb89b9342f664a54a6e0a6ea6501d3437cc2");
+    assert.equal(SWEBENCH_LITE_HARNESS_COMMIT, "f7bbbb2ccdf479001d6467c9e34af59e44a840f9");
+    assert.equal(
+      SWEBENCH_LITE_HARNESS_IMAGE_DIGEST,
+      "swebench/sweb.eval.x86_64.astropy_1776_astropy-12907@sha256:f3f63bb87d581c0e7b47f900dd82165b71040e1758d3c29e915e2b18da9baf63",
+    );
+    assert.equal(SWEBENCH_LITE_PREDICTION_JSONL_SCHEMA_HASH, "sha256:1f4f2da592ab5373104554cc3c55408feb0209c9fd32ff3bc603e81ad4933236");
+    assert.equal(SWEBENCH_LITE_ADAPTER.defaultResources.timeoutSeconds, 2700);
+    assert.equal(SWEBENCH_LITE_ADAPTER.defaultResources.memoryMb, 6144);
+    assert.equal(SWEBENCH_LITE_ADAPTER.defaultResources.cpuCores, 2);
+    assert.equal(SWEBENCH_LITE_PROBLEMS.length, 1);
+    const problem = getSwebenchLiteProblem("swe-bench-lite-astropy-12907");
+    assert.ok(problem);
+    assert.equal(problem.scoringMode, "scored-hidden");
+    assert.equal(problem.hostingMode, "adapter-only");
+    assert.equal(problem.oracleMetadata?.oracleDescriptorHash, `sha256:${sha256(officialSwebenchLiteDescriptor(problem))}`);
+    assert.equal(JSON.stringify(problem).includes("harnessCommit"), false);
+    assert.equal(JSON.stringify(problem).includes("predictionJsonlSchemaHash"), false);
+    assert.equal(SWEBENCH_LITE_HARNESS_IMAGE_DIGEST.includes("bbbbbbbb"), false);
+    assert.equal(SWEBENCH_LITE_HARNESS_COMMIT.includes("9f6c4d2a1b0e5f3c8d7a6b5c4e3f2a1908d7c6b5"), false);
+  });
+
+  it("validates SWE-bench Lite private descriptor when the secret artifact is mounted", () => {
+    const problem = getSwebenchLiteProblem("swe-bench-lite-astropy-12907");
+    assert.ok(problem);
+    const selected = selectCanonicalPrivateOracleDescriptor(
+      {
+        problemId: problem.id,
+        benchmarkId: problem.benchmarkId,
+        adapterId: problem.adapterId,
+        upstreamTaskId: problem.upstreamTaskId,
+        expectedOracleDescriptorHash: problem.oracleMetadata?.oracleDescriptorHash,
+      },
+      JSON.parse(officialSwebenchLiteDescriptor(problem)) as unknown,
+    );
+    assert.ok(selected);
+    assert.equal(`sha256:${sha256(selected.canonicalJson)}`, problem.oracleMetadata?.oracleDescriptorHash);
+    assert.equal(
+      validatePrivateOracleDescriptor(JSON.parse(selected.canonicalJson) as unknown, {
+        problemId: problem.id,
+        benchmarkId: problem.benchmarkId,
+        adapterId: problem.adapterId,
+        upstreamTaskId: problem.upstreamTaskId,
+      }).ok,
+      true,
+    );
+  });
+
+  it("keeps missing SWE-bench descriptor secrets fail-closed and public-only", () => {
+    const problem = getSwebenchLiteProblem("swe-bench-lite-astropy-12907");
+    assert.ok(problem);
+    assert.equal(SWEBENCH_LITE_DESCRIPTOR_HASH_MANIFEST.every((entry) => !("harnessImageDigest" in entry)), true);
+    assert.equal(problem.oracleMetadata?.oracleDescriptorHash, `sha256:${sha256(officialSwebenchLiteDescriptor(problem))}`);
+  });
+
+  it("constructs official harness Docker argv without leaking patch text or descriptor internals", () => {
+    const problem = getSwebenchLiteProblem("swe-bench-lite-astropy-12907");
+    assert.ok(problem);
+    const descriptor = JSON.parse(officialSwebenchLiteDescriptor(problem)) as {
+      oracleKind: "swebench-upstream-harness";
+      datasetName: string;
+      datasetRevision: string;
+      split: string;
+      instanceId: string;
+      repo: string;
+      baseCommit: string;
+      harnessCommit: string;
+      harnessImageDigest: string;
+      predictionJsonlSchemaHash: string;
+      cacheKey: string;
+      evidencePolicy: { originalEvidenceId: string; rerunEvidenceId: string };
+    };
+    const dir = mkdtempSync(join(tmpdir(), "agentoj-swebench-"));
+    const predictionPath = join(dir, "predictions.jsonl");
+    writeFileSync(predictionPath, JSON.stringify({ instance_id: descriptor.instanceId, model_name_or_path: "open-agent-judge-pr", model_patch: swebenchLitePatch }) + "\n", "utf8");
+    const input = {
+      benchmark: SWEBENCH_LITE_BENCHMARK,
+      adapter: SWEBENCH_LITE_ADAPTER,
+      problem,
+      submission: createPatchSubmission(problem, "swebench-lite-docker-args"),
+      patch: swebenchLitePatch,
+    };
+    const args = dockerSwebenchRunArgs(
+      input,
+      predictionPath,
+      descriptor,
+      "agentoj-swebench-lite",
+      "__AGENTOJ_HIDDEN_ORACLE_STARTED__:unit",
+    );
+    const joined = JSON.stringify(args);
+    assert.deepEqual(args, ["image", "inspect", SWEBENCH_LITE_HARNESS_IMAGE_DIGEST]);
+    assert.deepEqual(dockerSwebenchPullArgs(input), ["pull", SWEBENCH_LITE_HARNESS_IMAGE_DIGEST]);
+    assert.equal(joined.includes("SWE-bench Lite candidate patch"), false);
+    assert.equal(joined.includes("original-harness-log"), false);
+    assert.equal(joined.includes("rerun-harness-log"), false);
+    const harnessArgs = swebenchHostHarnessRunArgs("run-swebench-pinned.py", predictionPath, descriptor, "unit-run");
+    assert.deepEqual(harnessArgs, ["run-swebench-pinned.py", SWEBENCH_LITE_DATASET_NAME, "test", predictionPath, descriptor.instanceId, "unit-run"]);
+    assert.equal(JSON.stringify(harnessArgs).includes("SWE-bench Lite candidate patch"), false);
+  });
+
+  it("requires official SWE-bench report resolution and hash-bound prediction evidence", () => {
+    const problem = getSwebenchLiteProblem("swe-bench-lite-astropy-12907");
+    assert.ok(problem);
+    const descriptor = JSON.parse(officialSwebenchLiteDescriptor(problem)) as {
+      oracleKind: "swebench-upstream-harness";
+      datasetName: string;
+      datasetRevision: string;
+      split: string;
+      instanceId: string;
+      repo: string;
+      baseCommit: string;
+      harnessCommit: string;
+      harnessImageDigest: string;
+      predictionJsonlSchemaHash: string;
+      cacheKey: string;
+      evidencePolicy: { originalEvidenceId: string; rerunEvidenceId: string };
+    };
+    const input = {
+      benchmark: SWEBENCH_LITE_BENCHMARK,
+      adapter: SWEBENCH_LITE_ADAPTER,
+      problem,
+      submission: createPatchSubmission(problem, "swebench-lite-report-evidence"),
+      patch: swebenchLitePatch,
+    };
+    const predictionJsonl = JSON.stringify({ instance_id: descriptor.instanceId, model_name_or_path: "open-agent-judge-pr", model_patch: swebenchLitePatch }) + "\n";
+    const predictionEvidence = validateSwebenchPredictionJsonl(predictionJsonl, input, descriptor);
+    assert.match(predictionEvidence.predictionJsonlHash, /^sha256:[0-9a-f]{64}$/);
+    const report = JSON.stringify({
+      schema_version: 2,
+      submitted_ids: [descriptor.instanceId],
+      completed_ids: [descriptor.instanceId],
+      resolved_ids: [descriptor.instanceId],
+      unresolved_ids: [],
+      error_ids: [],
+    });
+    const evidence = JSON.parse(swebenchResolvedEvidenceFromReport(report, descriptor, predictionEvidence)) as Record<string, unknown>;
+    assert.equal(evidence.resolved, true);
+    assert.equal(evidence.instanceId, descriptor.instanceId);
+    assert.equal(evidence.predictionJsonlSchemaHash, SWEBENCH_LITE_PREDICTION_JSONL_SCHEMA_HASH);
+    assert.throws(
+      () =>
+        swebenchResolvedEvidenceFromReport(
+          JSON.stringify({ schema_version: 2, submitted_ids: [descriptor.instanceId], completed_ids: [descriptor.instanceId], resolved_ids: [], unresolved_ids: [descriptor.instanceId], error_ids: [] }),
+          descriptor,
+          predictionEvidence,
+        ),
+      /SWE-bench report unresolved/,
+    );
+  });
+
+  it("rejects SWE-bench Lite PR judging unless maintainer workflow dispatch metadata is present", () => {
+    const problem = getSwebenchLiteProblem("swe-bench-lite-astropy-12907");
+    assert.ok(problem);
+    const dir = mkdtempSync(join(tmpdir(), "agentoj-swebench-pr-"));
+    const patchPath = join(dir, "submission.patch");
+    const submissionPath = join(dir, "submission.json");
+    const summaryOut = join(dir, "summary.json");
+    writeFileSync(patchPath, swebenchLitePatch, "utf8");
+    const envelope = {
+      id: "swebench-lite-pr",
+      schemaVersion: 1,
+      problemId: problem.id,
+      adapterId: problem.adapterId,
+      prHeadSha: "0123456789abcdef0123456789abcdef01234567",
+      patchSha256: `sha256:${sha256(swebenchLitePatch)}`,
+      patchBytes: Buffer.byteLength(swebenchLitePatch),
+      patchStats: { filesChanged: 1, locAdded: 1, locDeleted: 1 },
+      files: [{ path: "astropy/modeling/separable.py", changeType: "modify", gitMode: "100644", byteSize: 512, isBinary: false, isSymlink: false }],
+      publicSubmission: true,
+    };
+    writeFileSync(submissionPath, JSON.stringify(envelope), "utf8");
+    const previousDescriptor = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+    process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = officialSwebenchLiteDescriptor(problem);
+    try {
+      const pullRequest = runCli([
+        "judge-pr-submission",
+        "--submission",
+        submissionPath,
+        "--patch",
+        patchPath,
+        "--summary-out",
+        summaryOut,
+        "--expected-pr-head-sha",
+        envelope.prHeadSha,
+        "--sandbox",
+        "docker",
+      ]);
+      assert.equal(pullRequest.ok, false);
+      assert.match((pullRequest.issues ?? []).join("\n"), /benchmarkPolicy\.trigger\.maintainerRequired/);
+
+      const missingInstance = runCli([
+        "judge-pr-submission",
+        "--submission",
+        submissionPath,
+        "--patch",
+        patchPath,
+        "--summary-out",
+        summaryOut,
+        "--expected-pr-head-sha",
+        envelope.prHeadSha,
+        "--trigger",
+        "workflow_dispatch",
+        "--sandbox",
+        "docker",
+      ]);
+      assert.equal(missingInstance.ok, false);
+      assert.match((missingInstance.issues ?? []).join("\n"), /benchmarkPolicy\.instance\.required/);
+
+      const nonAllowlistedInstance = runCli([
+        "judge-pr-submission",
+        "--submission",
+        submissionPath,
+        "--patch",
+        patchPath,
+        "--summary-out",
+        summaryOut,
+        "--expected-pr-head-sha",
+        envelope.prHeadSha,
+        "--trigger",
+        "workflow_dispatch",
+        "--instance-id",
+        "astropy__astropy-99999",
+        "--sandbox",
+        "docker",
+      ]);
+      assert.equal(nonAllowlistedInstance.ok, false);
+      assert.match((nonAllowlistedInstance.issues ?? []).join("\n"), /benchmarkPolicy\.instance\.allowlist|benchmarkPolicy\.instance\.descriptorMismatch/);
+
+      const maintainerRun = runCli([
+        "judge-pr-submission",
+        "--submission",
+        submissionPath,
+        "--patch",
+        patchPath,
+        "--summary-out",
+        summaryOut,
+        "--expected-pr-head-sha",
+        envelope.prHeadSha,
+        "--trigger",
+        "workflow_dispatch",
+        "--instance-id",
+        "astropy__astropy-12907",
+        "--sandbox",
+        "docker",
+      ]);
+      assert.equal(maintainerRun.ok, false);
+      assert.doesNotMatch((maintainerRun.issues ?? []).join("\n"), /benchmarkPolicy\.trigger\.maintainerRequired/);
+      assert.equal(maintainerRun.sandboxMode, "docker");
+      assert.match(maintainerRun.error ?? "", /PR judge did not pass|Docker unavailable|SWE-bench upstream harness failed|Verification failed/);
+    } finally {
+      if (previousDescriptor === undefined) {
+        delete process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+      } else {
+        process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = previousDescriptor;
+      }
+    }
+  });
+  it("scores an allowlisted SWE-bench Lite maintainer dispatch through a verified pinned harness path", () => {
+    const problem = getSwebenchLiteProblem("swe-bench-lite-astropy-12907");
+    assert.ok(problem);
+    const dir = mkdtempSync(join(tmpdir(), "agentoj-swebench-pr-pass-"));
+    const binDir = join(dir, "bin");
+    const harnessDir = join(dir, "swe-bench");
+    mkdirSync(binDir);
+    mkdirSync(harnessDir);
+    const dockerPath = join(binDir, "docker");
+    writeFileSync(
+      dockerPath,
+      [
+        "#!/bin/sh",
+        "if [ \"$1\" = \"--version\" ]; then echo 'Docker version 25.0.0'; exit 0; fi",
+        "if [ \"$1\" = \"pull\" ]; then echo \"pulled $2\"; exit 0; fi",
+        "if [ \"$1\" = \"image\" ] && [ \"$2\" = \"inspect\" ]; then echo '[{\"RepoDigests\":[\"'$3'\"]}]'; exit 0; fi",
+        "echo unexpected docker args >&2",
+        "exit 2",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    chmodSync(dockerPath, 0o755);
+    const gitPath = join(binDir, "git");
+    writeFileSync(
+      gitPath,
+      [
+        "#!/bin/sh",
+        "if [ \"$1\" = \"-C\" ] && [ \"$3\" = \"rev-parse\" ] && [ \"$4\" = \"HEAD\" ]; then echo '" + SWEBENCH_LITE_HARNESS_COMMIT + "'; exit 0; fi",
+        "echo unexpected git args >&2",
+        "exit 2",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    chmodSync(gitPath, 0o755);
+    const pythonPath = join(binDir, "python3");
+    writeFileSync(
+      pythonPath,
+      [
+        "#!/bin/sh",
+        "cat > \"open-agent-judge-pr.$6.json\" <<EOF",
+        "{\"schema_version\":2,\"submitted_ids\":[\"$5\"],\"completed_ids\":[\"$5\"],\"resolved_ids\":[\"$5\"],\"unresolved_ids\":[],\"error_ids\":[]}",
+        "EOF",
+        "exit 0",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    chmodSync(pythonPath, 0o755);
+
+    const patchPath = join(dir, "submission.patch");
+    const submissionPath = join(dir, "submission.json");
+    const summaryOut = join(dir, "summary.json");
+    writeFileSync(patchPath, swebenchLitePatch, "utf8");
+    const envelope = {
+      id: "swebench-lite-pr-pass",
+      schemaVersion: 1,
+      problemId: problem.id,
+      adapterId: problem.adapterId,
+      prHeadSha: "1123456789abcdef0123456789abcdef01234567",
+      patchSha256: `sha256:${sha256(swebenchLitePatch)}`,
+      patchBytes: Buffer.byteLength(swebenchLitePatch),
+      patchStats: { filesChanged: 1, locAdded: 1, locDeleted: 1 },
+      files: [{ path: "astropy/modeling/separable.py", changeType: "modify", gitMode: "100644", byteSize: 512, isBinary: false, isSymlink: false }],
+      publicSubmission: true,
+    };
+    writeFileSync(submissionPath, JSON.stringify(envelope), "utf8");
+
+    const previousDescriptor = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+    const previousHarnessPath = process.env.AGENTOJ_SWEBENCH_HARNESS_PATH;
+    const previousPath = process.env.PATH;
+    process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = officialSwebenchLiteDescriptor(problem);
+    process.env.AGENTOJ_SWEBENCH_HARNESS_PATH = harnessDir;
+    process.env.PATH = `${binDir}:${previousPath ?? ""}`;
+    try {
+      const maintainerRun = runCli([
+        "judge-pr-submission",
+        "--submission",
+        submissionPath,
+        "--patch",
+        patchPath,
+        "--summary-out",
+        summaryOut,
+        "--expected-pr-head-sha",
+        envelope.prHeadSha,
+        "--trigger",
+        "workflow_dispatch",
+        "--instance-id",
+        "astropy__astropy-12907",
+        "--sandbox",
+        "docker",
+      ]);
+      assert.equal(maintainerRun.ok, true);
+      assert.equal(maintainerRun.runnerStatus, "passed");
+      assert.equal(maintainerRun.sandboxMode, "docker");
+      assert.equal(maintainerRun.oracleMode, "hidden-oracle-scored");
+      assert.equal(maintainerRun.judgeSummary.status, "passed");
+      assert.equal(
+        maintainerRun.judgeSummary.validationMessages.some((message: string) => message.includes("oracle.scored")),
+        true,
+      );
+    } finally {
+      if (previousDescriptor === undefined) {
+        delete process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+      } else {
+        process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = previousDescriptor;
+      }
+      if (previousHarnessPath === undefined) {
+        delete process.env.AGENTOJ_SWEBENCH_HARNESS_PATH;
+      } else {
+        process.env.AGENTOJ_SWEBENCH_HARNESS_PATH = previousHarnessPath;
+      }
+      if (previousPath === undefined) {
+        delete process.env.PATH;
+      } else {
+        process.env.PATH = previousPath;
+      }
+    }
+  });
+});
+describe("SWE-bench Verified official harness scored surface", () => {
+  it("pins a real Verified official-harness instance with a descriptor distinct from Lite", () => {
+    assert.doesNotThrow(() => validateSwebenchVerifiedAdapterSeed());
+    assert.equal(SWEBENCH_VERIFIED_BENCHMARK.id, "swe-bench-verified");
+    assert.equal(SWEBENCH_VERIFIED_BENCHMARK.upstreamCommitOrVersion, SWEBENCH_VERIFIED_HARNESS_COMMIT);
+    assert.equal(SWEBENCH_VERIFIED_DATASET_NAME, "princeton-nlp/SWE-bench_Verified");
+    assert.equal(SWEBENCH_VERIFIED_DATASET_REVISION, "c104f840cc67f8b6eec6f759ebc8b2693d585d4a");
+    assert.equal(SWEBENCH_VERIFIED_HARNESS_COMMIT, SWEBENCH_LITE_HARNESS_COMMIT);
+    assert.equal(SWEBENCH_VERIFIED_HARNESS_IMAGE_DIGEST, SWEBENCH_LITE_HARNESS_IMAGE_DIGEST);
+    assert.equal(SWEBENCH_VERIFIED_PREDICTION_JSONL_SCHEMA_HASH, SWEBENCH_LITE_PREDICTION_JSONL_SCHEMA_HASH);
+    assert.equal(SWEBENCH_VERIFIED_PROBLEMS.length, 1);
+    const problem = getSwebenchVerifiedProblem("swe-bench-verified-astropy-12907");
+    assert.ok(problem);
+    assert.equal(problem.benchmarkId, "swe-bench-verified");
+    assert.equal(problem.adapterId, "swebench-verified");
+    assert.equal(problem.upstreamTaskId, "astropy__astropy-12907");
+    assert.equal(problem.oracleMetadata?.oracleDescriptorHash, `sha256:${sha256(officialSwebenchVerifiedDescriptor(problem))}`);
+    const liteProblem = getSwebenchLiteProblem("swe-bench-lite-astropy-12907");
+    assert.ok(liteProblem);
+    assert.notEqual(problem.id, liteProblem.id);
+    assert.notEqual(problem.benchmarkId, liteProblem.benchmarkId);
+    assert.notEqual(problem.oracleMetadata?.oracleDescriptorHash, liteProblem.oracleMetadata?.oracleDescriptorHash);
+  });
+
+  it("validates Verified descriptors and rejects Lite evidence as insufficient", () => {
+    const verified = getSwebenchVerifiedProblem("swe-bench-verified-astropy-12907");
+    const lite = getSwebenchLiteProblem("swe-bench-lite-astropy-12907");
+    assert.ok(verified);
+    assert.ok(lite);
+    const selected = selectCanonicalPrivateOracleDescriptor(
+      {
+        ...verified,
+        oracleMetadata: {
+          kind: "generated-private",
+          hiddenRequired: true,
+          oracleDescriptorHash: verified.oracleMetadata?.oracleDescriptorHash,
+        },
+      },
+      JSON.parse(officialSwebenchVerifiedDescriptor(verified)) as unknown,
+    );
+    assert.ok(selected);
+    assert.equal(`sha256:${sha256(selected.canonicalJson)}`, verified.oracleMetadata?.oracleDescriptorHash);
+    assert.equal(selected.descriptor.descriptorRevision, SWEBENCH_VERIFIED_DESCRIPTOR_REVISION);
+    const liteSelected = selectCanonicalPrivateOracleDescriptor(verified, JSON.parse(officialSwebenchLiteDescriptor(lite)) as unknown);
+    assert.equal(liteSelected, null);
+  });
+
+  it("scores an allowlisted SWE-bench Verified maintainer dispatch through a verified pinned harness path", () => {
+    const problem = getSwebenchVerifiedProblem("swe-bench-verified-astropy-12907");
+    assert.ok(problem);
+    const dir = mkdtempSync(join(tmpdir(), "agentoj-swebench-verified-pr-pass-"));
+    const binDir = join(dir, "bin");
+    const harnessDir = join(dir, "swe-bench");
+    mkdirSync(binDir);
+    mkdirSync(harnessDir);
+    const dockerPath = join(binDir, "docker");
+    writeFileSync(
+      dockerPath,
+      [
+        "#!/bin/sh",
+        "if [ \"$1\" = \"--version\" ]; then echo 'Docker version 25.0.0'; exit 0; fi",
+        "if [ \"$1\" = \"pull\" ]; then echo \"pulled $2\"; exit 0; fi",
+        "if [ \"$1\" = \"image\" ] && [ \"$2\" = \"inspect\" ]; then echo '[{\"RepoDigests\":[\"'$3'\"]}]'; exit 0; fi",
+        "echo unexpected docker args >&2",
+        "exit 2",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    chmodSync(dockerPath, 0o755);
+    const gitPath = join(binDir, "git");
+    writeFileSync(
+      gitPath,
+      [
+        "#!/bin/sh",
+        "if [ \"$1\" = \"-C\" ] && [ \"$3\" = \"rev-parse\" ] && [ \"$4\" = \"HEAD\" ]; then echo '" + SWEBENCH_VERIFIED_HARNESS_COMMIT + "'; exit 0; fi",
+        "echo unexpected git args >&2",
+        "exit 2",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    chmodSync(gitPath, 0o755);
+    const pythonPath = join(binDir, "python3");
+    writeFileSync(
+      pythonPath,
+      [
+        "#!/bin/sh",
+        "cat > \"open-agent-judge-pr.$6.json\" <<EOF",
+        "{\"schema_version\":2,\"submitted_ids\":[\"$5\"],\"completed_ids\":[\"$5\"],\"resolved_ids\":[\"$5\"],\"unresolved_ids\":[],\"error_ids\":[]}",
+        "EOF",
+        "exit 0",
+        "",
+      ].join("\n"),
+      "utf8",
+    );
+    chmodSync(pythonPath, 0o755);
+
+    const patchPath = join(dir, "submission.patch");
+    const submissionPath = join(dir, "submission.json");
+    const summaryOut = join(dir, "summary.json");
+    writeFileSync(patchPath, swebenchLitePatch, "utf8");
+    const envelope = {
+      id: "swebench-verified-pr-pass",
+      schemaVersion: 1,
+      problemId: problem.id,
+      adapterId: problem.adapterId,
+      prHeadSha: "2123456789abcdef0123456789abcdef01234567",
+      patchSha256: `sha256:${sha256(swebenchLitePatch)}`,
+      patchBytes: Buffer.byteLength(swebenchLitePatch),
+      patchStats: { filesChanged: 1, locAdded: 1, locDeleted: 1 },
+      files: [{ path: "astropy/modeling/separable.py", changeType: "modify", gitMode: "100644", byteSize: 512, isBinary: false, isSymlink: false }],
+      publicSubmission: true,
+    };
+    writeFileSync(submissionPath, JSON.stringify(envelope), "utf8");
+
+    const previousDescriptor = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+    const previousHarnessPath = process.env.AGENTOJ_SWEBENCH_HARNESS_PATH;
+    const previousPath = process.env.PATH;
+    process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = officialSwebenchVerifiedDescriptor(problem);
+    process.env.AGENTOJ_SWEBENCH_HARNESS_PATH = harnessDir;
+    process.env.PATH = `${binDir}:${previousPath ?? ""}`;
+    try {
+      const maintainerRun = runCli([
+        "judge-pr-submission",
+        "--submission",
+        submissionPath,
+        "--patch",
+        patchPath,
+        "--summary-out",
+        summaryOut,
+        "--expected-pr-head-sha",
+        envelope.prHeadSha,
+        "--trigger",
+        "workflow_dispatch",
+        "--instance-id",
+        "astropy__astropy-12907",
+        "--sandbox",
+        "docker",
+      ]);
+      assert.equal(maintainerRun.ok, true);
+      assert.equal(maintainerRun.problemId, problem.id);
+      assert.equal(maintainerRun.runnerStatus, "passed");
+      assert.equal(maintainerRun.sandboxMode, "docker");
+      assert.equal(maintainerRun.oracleMode, "hidden-oracle-scored");
+      assert.equal(maintainerRun.judgeSummary.status, "passed");
+    } finally {
+      if (previousDescriptor === undefined) {
+        delete process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+      } else {
+        process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = previousDescriptor;
+      }
+      if (previousHarnessPath === undefined) {
+        delete process.env.AGENTOJ_SWEBENCH_HARNESS_PATH;
+      } else {
+        process.env.AGENTOJ_SWEBENCH_HARNESS_PATH = previousHarnessPath;
+      }
+      if (previousPath === undefined) {
+        delete process.env.PATH;
+      } else {
+        process.env.PATH = previousPath;
+      }
+    }
   });
 });
 describe("local patch runner", () => {
@@ -377,6 +1543,403 @@ describe("local patch runner", () => {
     assert.equal(hidden.job.status, "failed");
     assert.match(hidden.stderr, /local hidden-oracle execution is disabled|private oracle metadata|private oracle descriptor/i);
   });
+  it("runs versioned python-function-cases private descriptors and rejects unsupported kinds fail-closed", () => {
+    const problem = getHumanEvalProblem("humaneval-001");
+    assert.ok(problem);
+
+    const passed = withVersionedPrivateOracle(
+      problem,
+      [{ id: "versioned-first", args: [[9, 8, 7]], expected: 9 }],
+      (scoredProblem) =>
+        runHiddenOraclePatchVerification({
+          benchmark: HUMANEVAL_BENCHMARK,
+          adapter: HUMANEVAL_ADAPTER,
+          problem: scoredProblem,
+          submission: createPatchSubmission(scoredProblem, "versioned-hidden-pass"),
+          patch: alternateEntryPointPatch,
+        }),
+      "solve",
+    );
+
+    assert.equal(passed.result.passFail, "pass");
+    assert.equal(passed.job.scoringStatus, "scored");
+    assert.equal(passed.stdout, "");
+
+    const unsupportedDescriptor = JSON.stringify({
+      schemaVersion: 2,
+      problemId: problem.id,
+      benchmarkId: problem.benchmarkId,
+      adapterId: problem.adapterId,
+      upstreamTaskId: problem.upstreamTaskId,
+      oracleKind: "command-hidden-tests",
+      commandId: "pytest-hidden",
+      allowedTargets: ["solution.py"],
+      hiddenTestBundleHash: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      expectedExitCode: 0,
+      evidencePolicy: { originalEvidenceId: "original-command", rerunEvidenceId: "rerun-command" },
+      fixtureHash: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    });
+    const previousJson = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+    const previousUnsafeLocal = process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE;
+    process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = unsupportedDescriptor;
+    process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE = "1";
+    try {
+      const unsupportedProblem: Problem = {
+        ...problem,
+        scoringMode: "scored-hidden",
+        oracleMetadata: {
+          kind: "generated-private",
+          hiddenRequired: true,
+          oracleDescriptorHash: `sha256:${sha256(unsupportedDescriptor)}`,
+          originalEvidenceId: "original-command",
+          rerunEvidenceId: "rerun-command",
+        },
+      };
+      const failed = runHiddenOraclePatchVerification({
+        benchmark: HUMANEVAL_BENCHMARK,
+        adapter: HUMANEVAL_ADAPTER,
+        problem: unsupportedProblem,
+        submission: createPatchSubmission(unsupportedProblem, "versioned-hidden-unsupported"),
+        patch: passingPatch,
+      });
+      assert.equal(failed.result.passFail, "fail");
+      assert.match(failed.stderr, /unsupportedKind|invalidShape|supported hidden oracle payload|official test-source descriptors/);
+    } finally {
+      if (previousJson === undefined) {
+        delete process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+      } else {
+        process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = previousJson;
+      }
+      if (previousUnsafeLocal === undefined) {
+        delete process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE;
+      } else {
+        process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE = previousUnsafeLocal;
+      }
+    }
+  });
+  it("runs official HumanEval test-source descriptors through the fixed private oracle path", async () => {
+    const problem = getHumanEvalProblem("humaneval-full-000");
+    assert.ok(problem);
+    const [task] = await fetchPinnedHumanEvalTasks();
+    const descriptor = officialHumanEvalDescriptor(problem, task);
+    const runtimeProblem: Problem = {
+      ...problem,
+      oracleMetadata: { ...problem.oracleMetadata!, oracleDescriptorHash: `sha256:${sha256(descriptor)}` },
+    };
+
+    const previousJson = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+    const previousUnsafeLocal = process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE;
+    process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = descriptor;
+    process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE = "1";
+    try {
+      const patch = [
+        "diff --git a/solution.py b/solution.py",
+        "--- a/solution.py",
+        "+++ b/solution.py",
+        "@@ -0,0 +1,6 @@",
+        "+def has_close_elements(numbers, threshold):",
+        "+    for i, left in enumerate(numbers):",
+        "+        for right in numbers[i + 1:]:",
+        "+            if abs(left - right) < threshold:",
+        "+                return True",
+        "+    return False",
+        "",
+      ].join("\n");
+      const fixtureDir = mkdtempSync(join(tmpdir(), "agentoj-empty-fixture-"));
+      writeFileSync(join(fixtureDir, "solution.py"), "", "utf8");
+      const dockerArgs = dockerRunArgs(
+        {
+          benchmark: HUMANEVAL_BENCHMARK,
+          adapter: HUMANEVAL_ADAPTER,
+          problem: runtimeProblem,
+          submission: createPatchSubmission(runtimeProblem, "official-hidden-docker-args"),
+          patch,
+        },
+        fixtureDir,
+      );
+      assert.ok(dockerArgs.includes("PYTHONPATH=/solution"));
+      assert.ok(dockerArgs.includes(HUMANEVAL_ADAPTER.dockerImageDigest));
+      assert.equal(dockerArgs.some((arg) => arg.includes("assert candidate")), false);
+      assert.equal(dockerArgs.some((arg) => arg.includes("/work/tests")), false);
+      const dockerArgvJson = JSON.stringify(dockerArgs);
+      assert.equal(dockerArgvJson.includes(descriptor), false);
+      assert.equal(dockerArgvJson.includes(task.test), false);
+      assert.equal(dockerArgvJson.includes("testSource"), false);
+      assert.equal(dockerArgvJson.includes("cases"), false);
+      assert.equal(dockerArgvJson.includes(officialHumanEvalEvidencePolicy(problem.id).originalEvidenceId), false);
+      assert.equal(dockerArgvJson.includes(officialHumanEvalEvidencePolicy(problem.id).rerunEvidenceId), false);
+      assert.equal(dockerArgvJson.includes("AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR"), false);
+
+      const passed = runHiddenOraclePatchVerification({
+        benchmark: HUMANEVAL_BENCHMARK,
+        adapter: HUMANEVAL_ADAPTER,
+        problem: runtimeProblem,
+        submission: createPatchSubmission(runtimeProblem, "official-hidden-pass"),
+        patch,
+        fixtureDir,
+      });
+      assert.equal(passed.result.passFail, "pass");
+      assert.equal(passed.job.scoringStatus, "scored");
+      assert.equal(passed.stdout, "");
+
+      const preExecutionFailure = runHiddenOraclePatchVerification({
+        benchmark: HUMANEVAL_BENCHMARK,
+        adapter: HUMANEVAL_ADAPTER,
+        problem: runtimeProblem,
+        submission: createPatchSubmission(runtimeProblem, "official-hidden-pre-exec-fail"),
+        patch: passingPatch,
+        fixtureDir,
+      });
+      assert.equal(preExecutionFailure.result.patchApplyStatus, "failed");
+      assert.equal(preExecutionFailure.job.scoringStatus, "demo");
+      assert.equal(preExecutionFailure.job.oracleDescriptorHash, null);
+
+      const publicKindProblem: Problem = {
+        ...runtimeProblem,
+        oracleMetadata: { ...runtimeProblem.oracleMetadata!, kind: "public-fixture" as "hidden-fixture" },
+      };
+      const publicKindFailure = runHiddenOraclePatchVerification({
+        benchmark: HUMANEVAL_BENCHMARK,
+        adapter: HUMANEVAL_ADAPTER,
+        problem: publicKindProblem,
+        submission: createPatchSubmission(publicKindProblem, "official-hidden-public-kind-fail"),
+        patch,
+        fixtureDir,
+      });
+      assert.equal(publicKindFailure.result.passFail, "fail");
+      assert.equal(publicKindFailure.job.scoringStatus, "demo");
+      assert.equal(publicKindFailure.job.oracleDescriptorHash, null);
+      assert.match(publicKindFailure.stderr, /private oracle metadata missing/i);
+
+      const failed = runHiddenOraclePatchVerification({
+        benchmark: HUMANEVAL_BENCHMARK,
+        adapter: HUMANEVAL_ADAPTER,
+        problem: runtimeProblem,
+        submission: createPatchSubmission(runtimeProblem, "official-hidden-fail"),
+        patch: patch.replace("+                return True", "+                return False"),
+        fixtureDir,
+      });
+      assert.equal(failed.result.passFail, "fail");
+      assert.equal(failed.stdout, "");
+      assert.equal(failed.stderr, "official hidden oracle failed");
+      const introspectionPatch = [
+        "diff --git a/solution.py b/solution.py",
+        "--- a/solution.py",
+        "+++ b/solution.py",
+        "@@ -0,0 +1,13 @@",
+        "+import inspect",
+        "+frame = inspect.currentframe()",
+        "+while frame is not None:",
+        "+    locals_text = repr(frame.f_locals)",
+        "+    if 'def check(candidate)' in locals_text:",
+        "+        raise RuntimeError('hidden oracle leaked into candidate import frame')",
+        "+    frame = frame.f_back",
+        "+def has_close_elements(numbers, threshold):",
+        "+    for i, left in enumerate(numbers):",
+        "+        for right in numbers[i + 1:]:",
+        "+            if abs(left - right) < threshold:",
+        "+                return True",
+        "+    return False",
+        "",
+      ].join("\n");
+      const introspectionPassed = runHiddenOraclePatchVerification({
+        benchmark: HUMANEVAL_BENCHMARK,
+        adapter: HUMANEVAL_ADAPTER,
+        problem: runtimeProblem,
+        submission: createPatchSubmission(runtimeProblem, "official-hidden-import-frame-isolated"),
+        patch: introspectionPatch,
+        fixtureDir,
+      });
+      assert.equal(introspectionPassed.result.passFail, "pass");
+      assert.equal(introspectionPassed.job.scoringStatus, "scored");
+    } finally {
+      if (previousJson === undefined) {
+        delete process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+      } else {
+        process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = previousJson;
+      }
+      if (previousUnsafeLocal === undefined) {
+        delete process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE;
+      } else {
+        process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE = previousUnsafeLocal;
+      }
+    }
+  });
+  it("runs real MBPP subset python-function-cases descriptors and keeps synthetic seed ids demo-only", async () => {
+    const problem = getMbppProblem("mbpp-full-003");
+    assert.ok(problem);
+    const task = (await fetchPinnedMbppTasks()).find((candidate) => candidate.task_id === 3);
+    assert.ok(task);
+    const cases = extractMbppCasesWithPython(task, "is_not_prime");
+    const descriptor = officialMbppDescriptor(problem, "is_not_prime", cases);
+    const descriptorHash = `sha256:${sha256(descriptor)}`;
+    assert.equal(problem.oracleMetadata?.oracleDescriptorHash, descriptorHash);
+    const runtimeProblem = problem;
+    const patch = [
+      "diff --git a/solution.py b/solution.py",
+      "--- a/solution.py",
+      "+++ b/solution.py",
+      "@@ -0,0 +1,7 @@",
+      "+def is_not_prime(n):",
+      "+    if n < 2:",
+      "+        return True",
+      "+    for value in range(2, int(n ** 0.5) + 1):",
+      "+        if n % value == 0:",
+      "+            return True",
+      "+    return False",
+      "",
+    ].join("\n");
+    const failingPatch = [
+      "diff --git a/solution.py b/solution.py",
+      "--- a/solution.py",
+      "+++ b/solution.py",
+      "@@ -0,0 +1,2 @@",
+      "+def is_not_prime(n):",
+      "+    return False",
+      "",
+    ].join("\n");
+
+    const previousJson = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+    const previousUnsafeLocal = process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE;
+    process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = descriptor;
+    process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE = "1";
+    try {
+      const fixtureDir = mkdtempSync(join(tmpdir(), "agentoj-mbpp-hidden-fixture-"));
+      writeFileSync(join(fixtureDir, "solution.py"), "", "utf8");
+      const dockerArgs = dockerRunArgs(
+        {
+          benchmark: MBPP_BENCHMARK,
+          adapter: MBPP_ADAPTER,
+          problem: runtimeProblem,
+          submission: createPatchSubmission(runtimeProblem, "mbpp-subset-hidden-docker-args"),
+          patch,
+        },
+        fixtureDir,
+      );
+      const dockerArgvJson = JSON.stringify(dockerArgs);
+      assert.ok(dockerArgs.includes(MBPP_ADAPTER.dockerImageDigest));
+      assert.ok(dockerArgs.includes("PYTHONPATH=/solution"));
+      assert.equal(dockerArgvJson.includes(descriptor), false);
+      assert.equal(dockerArgvJson.includes("mbpp-3-case-1"), false);
+      assert.equal(dockerArgvJson.includes("private-original-evidence"), false);
+      assert.equal(dockerArgvJson.includes("AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR"), false);
+
+      const passed = runHiddenOraclePatchVerification({
+        benchmark: MBPP_BENCHMARK,
+        adapter: MBPP_ADAPTER,
+        problem: runtimeProblem,
+        submission: createPatchSubmission(runtimeProblem, "mbpp-subset-hidden-pass"),
+        patch,
+        fixtureDir,
+      });
+      assert.equal(passed.result.passFail, "pass");
+      assert.equal(passed.job.scoringStatus, "scored");
+      assert.equal(passed.job.oracleDescriptorHash, runtimeProblem.oracleMetadata?.oracleDescriptorHash);
+      assert.equal(passed.stdout, "");
+
+      const failed = runHiddenOraclePatchVerification({
+        benchmark: MBPP_BENCHMARK,
+        adapter: MBPP_ADAPTER,
+        problem: runtimeProblem,
+        submission: createPatchSubmission(runtimeProblem, "mbpp-subset-hidden-fail"),
+        patch: failingPatch,
+        fixtureDir,
+      });
+      assert.equal(failed.result.passFail, "fail");
+      assert.equal(failed.job.scoringStatus, "scored");
+      assert.equal(failed.job.oracleDescriptorHash, runtimeProblem.oracleMetadata?.oracleDescriptorHash);
+      assert.equal(failed.stdout, "");
+
+      const syntheticSeed = getMbppProblem("mbpp-001-adapter-only");
+      assert.ok(syntheticSeed);
+      assert.equal(syntheticSeed.scoringMode, undefined);
+      const syntheticRun = runLocalPatchVerification({
+        benchmark: MBPP_BENCHMARK,
+        adapter: MBPP_ADAPTER,
+        problem: syntheticSeed,
+        submission: createPatchSubmission(syntheticSeed, "mbpp-synthetic-demo-only"),
+        patch: mbppReversePatch,
+      });
+      assert.equal(syntheticRun.result.passFail, "pass");
+      assert.equal(syntheticRun.job.scoringStatus, "demo");
+      assert.equal(syntheticRun.job.oracleDescriptorHash, null);
+
+      const dir = mkdtempSync(join(tmpdir(), "agentoj-mbpp-synthetic-pr-"));
+      const patchPath = join(dir, "fix.diff");
+      const submissionPath = join(dir, "submission.json");
+      const summaryPath = join(dir, "summary.json");
+      writeFileSync(patchPath, mbppReversePatch, "utf8");
+      writeFileSync(submissionPath, JSON.stringify(prSubmissionEnvelope("mbpp-001-adapter-only", "mbpp-python", mbppReversePatch)), "utf8");
+      const syntheticPr = runCli(["judge-pr-submission", "--submission", submissionPath, "--patch", patchPath, "--summary-out", summaryPath]);
+      const syntheticSummary = JSON.parse(readFileSync(summaryPath, "utf8")) as { status: string; validationMessages: string[] };
+      assert.equal(syntheticPr.ok, false);
+      assert.equal(syntheticPr.runnerStatus, "invalid");
+      assert.match(syntheticSummary.validationMessages.join("\n"), /scoredHiddenRequired/);
+      assert.equal(JSON.stringify(syntheticSummary).includes("reverse_string"), false);
+      assert.equal(validateSanitizedPrJudgeSummary(syntheticSummary, judgeOptions).ok, true);
+    } finally {
+      if (previousJson === undefined) {
+        delete process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+      } else {
+        process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = previousJson;
+      }
+      if (previousUnsafeLocal === undefined) {
+        delete process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE;
+      } else {
+        process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE = previousUnsafeLocal;
+      }
+    }
+  });
+  it("fails closed when descriptor hash does not match runtime oracle metadata", () => {
+    const problem = getHumanEvalProblem("humaneval-001");
+    assert.ok(problem);
+    const descriptor = JSON.stringify({
+      schemaVersion: 2,
+      problemId: problem.id,
+      benchmarkId: problem.benchmarkId,
+      adapterId: problem.adapterId,
+      upstreamTaskId: problem.upstreamTaskId,
+      oracleKind: "python-function-cases",
+      entryPoint: "candidate",
+      cases: [{ id: "evidence-case", args: [[1]], expected: 1 }],
+      evidencePolicy: { originalEvidenceId: "descriptor-original", rerunEvidenceId: "descriptor-rerun" },
+    });
+    const previousJson = process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+    const previousUnsafeLocal = process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE;
+    process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = descriptor;
+    process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE = "1";
+    try {
+      const mismatchedProblem: Problem = {
+        ...problem,
+        scoringMode: "scored-hidden",
+        oracleMetadata: {
+          kind: "generated-private",
+          hiddenRequired: true,
+          oracleDescriptorHash: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        },
+      };
+      const failed = runHiddenOraclePatchVerification({
+        benchmark: HUMANEVAL_BENCHMARK,
+        adapter: HUMANEVAL_ADAPTER,
+        problem: mismatchedProblem,
+        submission: createPatchSubmission(mismatchedProblem, "versioned-hidden-hash-mismatch"),
+        patch: passingPatch,
+      });
+      assert.equal(failed.result.passFail, "fail");
+      assert.match(failed.stderr, /invalid|hashMismatch|descriptor hash does not match/);
+    } finally {
+      if (previousJson === undefined) {
+        delete process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;
+      } else {
+        process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = previousJson;
+      }
+      if (previousUnsafeLocal === undefined) {
+        delete process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE;
+      } else {
+        process.env.AGENTOJ_ALLOW_UNSAFE_LOCAL_HIDDEN_ORACLE = previousUnsafeLocal;
+      }
+    }
+  });
   it("builds digest-pinned Docker run arguments with containment flags", () => {
     const catalog = getImplementedProblemCatalog("humaneval-001");
     assert.ok(catalog);
@@ -420,6 +1983,7 @@ describe("local patch runner", () => {
     assert.equal(args.includes("--env-file"), false);
     assert.equal(args.some((arg) => arg.includes("SECRET")), false);
     assert.equal(args.includes(catalog.adapter.dockerImageDigest), true);
+    assert.equal(args.some((arg) => arg.includes("private-smoke") || arg.includes("\"args\"")), false);
 
     assert.equal(isPinnedDockerImageDigest("python:3.12-slim"), false);
     assert.throws(
@@ -438,6 +2002,10 @@ describe("local patch runner", () => {
         ),
       /digest-pinned/,
     );
+  });
+  it("does not emit private hidden-oracle pass markers", () => {
+    assert.equal(privateOracleStdout(["first-hidden-case"], false), "");
+    assert.equal(privateOracleStdout(["first-hidden-case", "second-hidden-case"], true), "");
   });
 
   it("runs every seeded HumanEval fixture with its matching patch", () => {
@@ -484,9 +2052,10 @@ describe("CLI runner prototype", () => {
   it("lists, shows, and reports adapter registry metadata", () => {
     const listed = runCli(["list"]);
     assert.equal(listed.ok, true);
-    assert.equal(listed.problems?.length, 6);
+    assert.equal(listed.problems?.length, 232);
     assert.equal(listed.problems?.some((problem) => problem.id === "humaneval-002"), true);
     assert.equal(listed.problems?.some((problem) => problem.id === "mbpp-001-adapter-only" && problem.hostingMode === "adapter-only"), true);
+    assert.equal(listed.problems?.some((problem) => problem.id === "swe-bench-verified-astropy-12907" && problem.benchmarkId === "swe-bench-verified"), true);
 
     const shown = runCli(["show", "humaneval-003-adapter-only"]);
     assert.equal(shown.ok, true);
@@ -497,13 +2066,55 @@ describe("CLI runner prototype", () => {
     assert.equal(shownMbpp.problem?.benchmarkId, "mbpp");
     assert.equal(shownMbpp.problem?.hostingMode, "adapter-only");
     assert.equal(shownMbpp.problem?.upstreamTaskId, "MBPP/adapter-seed-001");
+    const shownFull = runCli(["show", "humaneval-full-000"]);
+    assert.equal(shownFull.ok, true);
+    assert.deepEqual(Object.keys(shownFull.problem ?? {}).sort(), [
+      "adapterId",
+      "benchmarkId",
+      "hostingMode",
+      "id",
+      "oracleDescriptorHash",
+      "scoringMode",
+      "tags",
+      "title",
+      "upstreamTaskId",
+    ]);
+    assert.equal(shownFull.problem?.scoringMode, "scored-hidden");
+    assert.match(String(shownFull.problem?.oracleDescriptorHash), /^sha256:[0-9a-f]{64}$/);
+    const shownFullJson = JSON.stringify(shownFull.problem);
+    assert.equal(shownFullJson.includes("testSource"), false);
+    assert.equal(shownFullJson.includes("cases"), false);
+    assert.equal(shownFullJson.includes("originalEvidenceId"), false);
+    assert.equal(shownFullJson.includes("rerunEvidenceId"), false);
+    const shownQuixbugs = runCli(["show", "quixbugs-python-bitcount"]);
+    assert.equal(shownQuixbugs.ok, true);
+    assert.deepEqual(Object.keys(shownQuixbugs.problem ?? {}).sort(), [
+      "adapterId",
+      "benchmarkId",
+      "hostingMode",
+      "id",
+      "oracleDescriptorHash",
+      "scoringMode",
+      "tags",
+      "title",
+      "upstreamTaskId",
+    ]);
+    assert.equal(shownQuixbugs.problem?.scoringMode, "scored-hidden");
+    assert.match(String(shownQuixbugs.problem?.oracleDescriptorHash), /^sha256:[0-9a-f]{64}$/);
+    const shownQuixbugsJson = JSON.stringify(shownQuixbugs.problem);
+    assert.equal(shownQuixbugsJson.includes("testSource"), false);
+    assert.equal(shownQuixbugsJson.includes("hiddenTestBundleHash"), false);
+    assert.equal(shownQuixbugsJson.includes("cases"), false);
+    assert.equal(shownQuixbugsJson.includes("originalEvidenceId"), false);
+    assert.equal(shownQuixbugsJson.includes("rerunEvidenceId"), false);
 
 
     const registry = runCli(["registry"]);
     assert.equal(registry.ok, true);
     assert.equal(registry.registry?.some((entry) => entry.benchmarkId === "mbpp" && entry.licenseId === "Apache-2.0"), true);
-    assert.equal(registry.registry?.some((entry) => entry.benchmarkId === "mbpp" && entry.status === "implemented" && entry.dataPolicy === "fixture-seed"), true);
-    assert.equal(registry.registry?.some((entry) => entry.benchmarkId === "swe-bench-lite" && entry.dataPolicy === "metadata-only"), true);
+    assert.equal(registry.registry?.some((entry) => entry.benchmarkId === "mbpp" && entry.status === "implemented" && entry.dataPolicy === "full-hidden-plus-fixture-seed"), true);
+    assert.equal(registry.registry?.some((entry) => entry.benchmarkId === "humaneval" && entry.status === "implemented" && entry.dataPolicy === "full-hidden-plus-fixture-seed"), true);
+    assert.equal(registry.registry?.some((entry) => entry.benchmarkId === "swe-bench-lite" && entry.status === "implemented" && entry.dataPolicy === "full-hidden-plus-fixture-seed"), true);
   });
   it("turns a patch file into a private demo recording without public promotion", () => {
     const dir = mkdtempSync(join(tmpdir(), "agentoj-cli-"));
@@ -839,8 +2450,13 @@ describe("CLI runner prototype", () => {
     assert.equal(webData.exportedFiles?.length, 5);
     const exportedProblems = JSON.parse(readFileSync(join(webOut, "problems.json"), "utf8")) as Array<{ id: string }>;
     const exportedMemory = JSON.parse(readFileSync(join(webOut, "memory.json"), "utf8")) as Array<{ publicRecordingLink: string }>;
-    assert.deepEqual(exportedProblems.map((problem) => problem.id).sort(), ["humaneval-001", "humaneval-002", "humaneval-003-adapter-only"]);
-    assert.equal(exportedProblems.some((problem) => problem.id.startsWith("mbpp-")), false);
+    assert.equal(exportedProblems.some((problem) => problem.id === "humaneval-001"), true);
+    assert.equal(exportedProblems.some((problem) => problem.id === "humaneval-full-000"), true);
+    assert.equal(exportedProblems.filter((problem) => problem.id.startsWith("humaneval-full-")).length, 164);
+    assert.equal(exportedProblems.some((problem) => problem.id === "mbpp-full-003"), true);
+    assert.equal(exportedProblems.some((problem) => problem.id.startsWith("quixbugs-python-")), true);
+    assert.equal(exportedProblems.some((problem) => problem.id === "swe-bench-lite-astropy-12907"), true);
+    assert.equal(exportedProblems.some((problem) => problem.id === "swe-bench-verified-astropy-12907"), true);
     assert.equal(exportedMemory.length, 0);
   });
 

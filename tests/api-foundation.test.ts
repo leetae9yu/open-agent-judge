@@ -71,7 +71,7 @@ describe("AgentOJ API foundation", () => {
     assert.equal(body.ok, true);
     assert.equal(body.service, "agentoj-api");
     assert.equal(body.sqlite, "open");
-    assert.equal(body.catalogProblems, 6);
+    assert.equal(body.catalogProblems, 229);
 
     const cli = runCli(["serve", "--db", "local.sqlite", "--port", "4111"]);
     assert.equal(cli.ok, true);
@@ -136,12 +136,121 @@ describe("AgentOJ API foundation", () => {
 
     const { baseUrl } = await withServer({ dbPath });
     const problemsResponse = await fetch(`${baseUrl}/api/problems`);
-    const problemsBody = (await problemsResponse.json()) as { problems: Array<{ id: string; hostingMode: string }> };
+    const problemsBody = (await problemsResponse.json()) as { problems: Array<{ id: string; benchmarkId: string; upstreamTaskId: string; hostingMode: string; scoringMode?: string; oracleDescriptorHash?: string }> };
 
     assert.equal(problemsResponse.status, 200);
     assert.equal(problemsBody.problems.some((problem) => problem.id === "humaneval-001"), true);
     assert.equal(problemsBody.problems.some((problem) => problem.id === "unknown-problem"), false);
     assert.equal(problemsBody.problems.some((problem) => problem.hostingMode === "adapter-only"), true);
+    assert.equal(problemsBody.problems.some((problem) => problem.id === "humaneval-full-000"), true);
+
+    const mbppScoredProblems = problemsBody.problems.filter((problem) => problem.benchmarkId === "mbpp" && problem.scoringMode === "scored-hidden");
+    assert.equal(mbppScoredProblems.length, 50);
+    assert.equal(new Set(mbppScoredProblems.map((problem) => problem.id)).size, 50);
+    assert.equal(new Set(mbppScoredProblems.map((problem) => problem.upstreamTaskId)).size, 50);
+    assert.equal(mbppScoredProblems.every((problem) => String(problem.id).startsWith("mbpp-full-")), true);
+    assert.equal(mbppScoredProblems.some((problem) => String(problem.id).includes("adapter-only")), false);
+    assert.equal(mbppScoredProblems.every((problem) => /^sha256:[0-9a-f]{64}$/.test(String(problem.oracleDescriptorHash))), true);
+    const quixbugsScoredProblems = problemsBody.problems.filter((problem) => problem.benchmarkId === "quixbugs" && problem.scoringMode === "scored-hidden");
+    assert.equal(quixbugsScoredProblems.length, 10);
+    assert.equal(new Set(quixbugsScoredProblems.map((problem) => problem.id)).size, 10);
+    assert.equal(new Set(quixbugsScoredProblems.map((problem) => problem.upstreamTaskId)).size, 10);
+    assert.equal(quixbugsScoredProblems.every((problem) => String(problem.id).startsWith("quixbugs-python-")), true);
+    assert.equal(quixbugsScoredProblems.every((problem) => /^sha256:[0-9a-f]{64}$/.test(String(problem.oracleDescriptorHash))), true);
+    const swebenchLiteProblems = problemsBody.problems.filter((problem) => problem.benchmarkId === "swe-bench-lite" && problem.scoringMode === "scored-hidden");
+    assert.equal(swebenchLiteProblems.length, 1);
+    assert.equal(swebenchLiteProblems[0]?.id, "swe-bench-lite-astropy-12907");
+    assert.equal(swebenchLiteProblems[0]?.upstreamTaskId, "astropy__astropy-12907");
+    assert.match(String(swebenchLiteProblems[0]?.oracleDescriptorHash), /^sha256:[0-9a-f]{64}$/);
+
+
+    const fullProblemResponse = await fetch(`${baseUrl}/api/problems/humaneval-full-000`);
+    const fullProblemBody = (await fullProblemResponse.json()) as { problem: Record<string, unknown> };
+    assert.equal(fullProblemResponse.status, 200);
+    assert.deepEqual(Object.keys(fullProblemBody.problem).sort(), [
+      "adapterId",
+      "benchmarkId",
+      "hostingMode",
+      "id",
+      "oracleDescriptorHash",
+      "scoringMode",
+      "tags",
+      "title",
+      "upstreamTaskId",
+    ]);
+    assert.equal(fullProblemBody.problem.id, "humaneval-full-000");
+    assert.equal(fullProblemBody.problem.scoringMode, "scored-hidden");
+    assert.match(String(fullProblemBody.problem.oracleDescriptorHash), /^sha256:[0-9a-f]{64}$/);
+    assert.deepEqual(fullProblemBody.problem.tags, ["python", "humaneval", "scored-hidden"]);
+    assert.equal(JSON.stringify(fullProblemBody.problem).includes("testSource"), false);
+    assert.equal(JSON.stringify(fullProblemBody.problem).includes("cases"), false);
+    assert.equal(JSON.stringify(fullProblemBody.problem).includes("originalEvidenceId"), false);
+    assert.equal(JSON.stringify(fullProblemBody.problem).includes("rerunEvidenceId"), false);
+
+    const mbppFullResponse = await fetch(`${baseUrl}/api/problems/mbpp-full-003`);
+    const mbppFullBody = (await mbppFullResponse.json()) as { problem: Record<string, unknown> };
+    assert.equal(mbppFullResponse.status, 200);
+    assert.deepEqual(Object.keys(mbppFullBody.problem).sort(), [
+      "adapterId",
+      "benchmarkId",
+      "hostingMode",
+      "id",
+      "oracleDescriptorHash",
+      "scoringMode",
+      "tags",
+      "title",
+      "upstreamTaskId",
+    ]);
+    assert.equal(mbppFullBody.problem.id, "mbpp-full-003");
+    assert.equal(mbppFullBody.problem.scoringMode, "scored-hidden");
+    assert.match(String(mbppFullBody.problem.oracleDescriptorHash), /^sha256:[0-9a-f]{64}$/);
+    assert.deepEqual(mbppFullBody.problem.tags, ["python", "mbpp", "scored-hidden"]);
+    assert.equal(JSON.stringify(mbppFullBody.problem).includes("test_list"), false);
+    assert.equal(JSON.stringify(mbppFullBody.problem).includes("cases"), false);
+    assert.equal(JSON.stringify(mbppFullBody.problem).includes("originalEvidenceId"), false);
+    assert.equal(JSON.stringify(mbppFullBody.problem).includes("rerunEvidenceId"), false);
+    const quixbugsFullResponse = await fetch(`${baseUrl}/api/problems/quixbugs-python-bitcount`);
+    const quixbugsFullBody = (await quixbugsFullResponse.json()) as { problem: Record<string, unknown> };
+    assert.equal(quixbugsFullResponse.status, 200);
+    assert.deepEqual(Object.keys(quixbugsFullBody.problem).sort(), [
+      "adapterId",
+      "benchmarkId",
+      "hostingMode",
+      "id",
+      "oracleDescriptorHash",
+      "scoringMode",
+      "tags",
+      "title",
+      "upstreamTaskId",
+    ]);
+    assert.equal(quixbugsFullBody.problem.id, "quixbugs-python-bitcount");
+    assert.equal(quixbugsFullBody.problem.scoringMode, "scored-hidden");
+    assert.match(String(quixbugsFullBody.problem.oracleDescriptorHash), /^sha256:[0-9a-f]{64}$/);
+    assert.deepEqual(quixbugsFullBody.problem.tags, ["python", "quixbugs", "bug-fix", "scored-hidden"]);
+    assert.equal(JSON.stringify(quixbugsFullBody.problem).includes("testSource"), false);
+    assert.equal(JSON.stringify(quixbugsFullBody.problem).includes("hiddenTestBundleHash"), false);
+    assert.equal(JSON.stringify(quixbugsFullBody.problem).includes("cases"), false);
+    assert.equal(JSON.stringify(quixbugsFullBody.problem).includes("originalEvidenceId"), false);
+    assert.equal(JSON.stringify(quixbugsFullBody.problem).includes("rerunEvidenceId"), false);
+    const swebenchLiteResponse = await fetch(`${baseUrl}/api/problems/swe-bench-lite-astropy-12907`);
+    const swebenchLiteBody = (await swebenchLiteResponse.json()) as { problem: Record<string, unknown> };
+    assert.equal(swebenchLiteResponse.status, 200);
+    assert.deepEqual(Object.keys(swebenchLiteBody.problem).sort(), [
+      "adapterId",
+      "benchmarkId",
+      "hostingMode",
+      "id",
+      "oracleDescriptorHash",
+      "scoringMode",
+      "tags",
+      "title",
+      "upstreamTaskId",
+    ]);
+    assert.equal(swebenchLiteBody.problem.scoringMode, "scored-hidden");
+    assert.equal(JSON.stringify(swebenchLiteBody.problem).includes("harnessCommit"), false);
+    assert.equal(JSON.stringify(swebenchLiteBody.problem).includes("harnessImageDigest"), false);
+    assert.equal(JSON.stringify(swebenchLiteBody.problem).includes("predictionJsonlSchemaHash"), false);
+    assert.equal(JSON.stringify(swebenchLiteBody.problem).includes("originalEvidenceId"), false);
 
     const hiddenResponse = await fetch(`${baseUrl}/api/problems/unknown-problem`);
     assert.equal(hiddenResponse.status, 404);
@@ -153,7 +262,7 @@ describe("AgentOJ API foundation", () => {
 
     const registryResponse = await fetch(`${baseUrl}/api/registry`);
     const registryBody = (await registryResponse.json()) as { registry: Array<{ benchmarkId: string; status: string; dataPolicy: string }> };
-    assert.equal(registryBody.registry.some((entry) => entry.benchmarkId === "mbpp" && entry.status === "implemented" && entry.dataPolicy === "fixture-seed"), true);
+    assert.equal(registryBody.registry.some((entry) => entry.benchmarkId === "mbpp" && entry.status === "implemented" && entry.dataPolicy === "full-hidden-plus-fixture-seed"), true);
   });
   it("redacts unexpected internal errors from public responses", async () => {
     const directoryPath = mkdtempSync(join(tmpdir(), "agentoj-api-db-dir-"));

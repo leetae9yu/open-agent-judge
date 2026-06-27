@@ -16,6 +16,8 @@ export interface ApiProblemListItem {
   upstreamTaskId: string;
   hostingMode: string;
   tags: string[];
+  scoringMode?: string;
+  oracleDescriptorHash?: string;
 }
 
 export interface ApiRegistryItem {
@@ -209,6 +211,16 @@ function asProblem(row: {
     editableFilePaths: ["solution.py"],
   };
 }
+
+function withCatalogRuntimeMetadata(problem: Problem): Problem {
+  const catalogProblem = listImplementedProblemCatalogs().find((entry) => entry.problem.id === problem.id)?.problem;
+  if (!catalogProblem) return problem;
+  return {
+    ...problem,
+    scoringMode: catalogProblem.scoringMode,
+    oracleMetadata: catalogProblem.oracleMetadata,
+  };
+}
 function asBenchmark(row: {
   benchmark_id: string;
   benchmark_name: string;
@@ -400,7 +412,7 @@ export class AgentOjRepository {
         }
       | undefined;
     if (!row) throw notFound(`Unknown problem id: ${id}`);
-    return { problem: asProblem(row), benchmark: asBenchmark(row), adapter: asAdapter(row) };
+    return { problem: withCatalogRuntimeMetadata(asProblem(row)), benchmark: asBenchmark(row), adapter: asAdapter(row) };
   }
   private loadProblemEntity(id: string): Problem {
     const row = this.db
@@ -426,7 +438,7 @@ export class AgentOjRepository {
         }
       | undefined;
     if (!row) throw notFound(`Unknown problem id: ${id}`);
-    return asProblem(row);
+    return withCatalogRuntimeMetadata(asProblem(row));
   }
 
   submitPatch(input: { problemId: string; patch: string; userId: string; visibility?: PatchSubmission["visibility"] }): ApiSubmissionReceipt {
@@ -626,13 +638,14 @@ export class AgentOjRepository {
         sandboxMode,
       );
 
-      const status: ApiWorkerRunResult["status"] = verification.result.passFail === "pass" ? "passed" : "failed";
+      const hiddenScored = problem.scoringMode !== "scored-hidden" || (verification.job.scoringStatus === "scored" && verification.job.oracleDescriptorHash === problem.oracleMetadata?.oracleDescriptorHash);
+      const status: ApiWorkerRunResult["status"] = verification.result.passFail === "pass" && hiddenScored ? "passed" : "failed";
       const result: RunnerResult = {
         ...verification.result,
         id: stableId("result", claimed.id),
         jobId: claimed.id,
       };
-      return terminalize(status, result, verification.stderr || "runner failed", verification.job);
+      return terminalize(status, result, hiddenScored ? verification.stderr || "runner failed" : "scored-hidden submissions require matching private oracle execution", verification.job);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return terminalize("infra-error", syntheticResult(claimed.id, message), message);
@@ -1105,15 +1118,20 @@ export class AgentOjRepository {
       language_framework_tags_json: string;
     }>;
 
-    return rows.map((row) => ({
-      id: row.id,
-      title: row.title,
-      benchmarkId: row.benchmark_id,
-      adapterId: row.adapter_id,
-      upstreamTaskId: row.upstream_task_id,
-      hostingMode: row.hosting_mode,
-      tags: JSON.parse(row.language_framework_tags_json) as string[],
-    }));
+    return rows.map((row) => {
+      const catalogProblem = listImplementedProblemCatalogs().find((entry) => entry.problem.id === row.id)?.problem;
+      return {
+        id: row.id,
+        title: row.title,
+        benchmarkId: row.benchmark_id,
+        adapterId: row.adapter_id,
+        upstreamTaskId: row.upstream_task_id,
+        hostingMode: row.hosting_mode,
+        tags: JSON.parse(row.language_framework_tags_json) as string[],
+        ...(catalogProblem?.scoringMode ? { scoringMode: catalogProblem.scoringMode } : {}),
+        ...(catalogProblem?.oracleMetadata?.oracleDescriptorHash ? { oracleDescriptorHash: catalogProblem.oracleMetadata.oracleDescriptorHash } : {}),
+      };
+    });
   }
 
   getProblem(id: string): ApiProblemListItem {

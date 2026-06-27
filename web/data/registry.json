@@ -3,28 +3,45 @@
     "benchmarkId": "humaneval",
     "name": "HumanEval",
     "licenseId": "MIT",
+    "legalStatus": "approved",
+    "redistributionRights": "clear",
     "status": "implemented",
-    "dataPolicy": "fixture-seed"
+    "dataPolicy": "full-hidden-plus-fixture-seed"
   },
   {
     "benchmarkId": "mbpp",
     "name": "Mostly Basic Python Problems",
     "licenseId": "Apache-2.0",
-    "status": "candidate",
-    "dataPolicy": "metadata-only"
+    "legalStatus": "approved",
+    "redistributionRights": "clear",
+    "status": "implemented",
+    "dataPolicy": "full-hidden-plus-fixture-seed"
   },
   {
     "benchmarkId": "quixbugs",
     "name": "QuixBugs",
     "licenseId": "MIT",
-    "status": "candidate",
-    "dataPolicy": "metadata-only"
+    "legalStatus": "approved",
+    "redistributionRights": "clear",
+    "status": "implemented",
+    "dataPolicy": "full-hidden-plus-fixture-seed"
   },
   {
     "benchmarkId": "swe-bench-lite",
     "name": "SWE-bench Lite",
     "licenseId": "MIT",
-    "status": "candidate",
-    "dataPolicy": "metadata-only"
+    "legalStatus": "approved",
+    "redistributionRights": "clear",
+    "status": "implemented",
+    "dataPolicy": "full-hidden-plus-fixture-seed"
+  },
+  {
+    "benchmarkId": "swe-bench-verified",
+    "name": "SWE-bench Verified",
+    "licenseId": "MIT",
+    "legalStatus": "approved",
+    "redistributionRights": "clear",
+    "status": "implemented",
+    "dataPolicy": "full-hidden-plus-fixture-seed"
   }
 ]

@@ -1,11 +1,12 @@
 import type { Adapter, Benchmark, Problem } from "../contracts/types.ts";
 import { validateAdapter, validateBenchmark, validateProblem } from "../contracts/validators.ts";
+import { HUMANEVAL_FULL_DESCRIPTOR_REVISION, HUMANEVAL_FULL_ORACLE_MANIFEST, HUMANEVAL_UPSTREAM_COMMIT, HUMANEVAL_UPSTREAM_DATA_SHA256, HUMANEVAL_UPSTREAM_DATA_URL, humanEvalFullScoredProblems } from "./humaneval-full.ts";
 
 export const HUMANEVAL_BENCHMARK: Benchmark = {
   id: "humaneval",
   name: "HumanEval",
   upstreamUrl: "https://github.com/openai/human-eval",
-  upstreamCommitOrVersion: "7f8c01e",
+  upstreamCommitOrVersion: HUMANEVAL_UPSTREAM_COMMIT,
   licenseId: "MIT",
   legalStatus: "approved",
   redistributionRights: "clear",
@@ -29,7 +30,7 @@ export const HUMANEVAL_ADAPTER: Adapter = {
   },
 };
 
-export const HUMANEVAL_PROBLEMS: Problem[] = [
+export const HUMANEVAL_DEMO_PROBLEMS: Problem[] = [
   {
     id: "humaneval-001",
     benchmarkId: HUMANEVAL_BENCHMARK.id,
@@ -64,6 +65,13 @@ export const HUMANEVAL_PROBLEMS: Problem[] = [
     editableFilePaths: ["solution.py"],
   },
 ];
+
+export const HUMANEVAL_SCORED_PROBLEMS: Problem[] = humanEvalFullScoredProblems(HUMANEVAL_BENCHMARK.id, HUMANEVAL_ADAPTER.id);
+
+export const HUMANEVAL_PROBLEMS: Problem[] = [...HUMANEVAL_DEMO_PROBLEMS, ...HUMANEVAL_SCORED_PROBLEMS];
+
+export const HUMANEVAL_DESCRIPTOR_HASH_MANIFEST = HUMANEVAL_FULL_ORACLE_MANIFEST;
+export { HUMANEVAL_FULL_DESCRIPTOR_REVISION, HUMANEVAL_UPSTREAM_DATA_SHA256, HUMANEVAL_UPSTREAM_DATA_URL };
 
 export function listHumanEvalProblems(): readonly Problem[] {
   return HUMANEVAL_PROBLEMS;

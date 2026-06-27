@@ -1,6 +1,8 @@
+import { createHash } from "node:crypto";
 import type {
   Adapter,
   Benchmark,
+  BenchmarkExecutionPolicy,
   EvidenceLedger,
   HostingMode,
   LeaderboardEntry,
@@ -11,6 +13,8 @@ import type {
   ReviewGate,
   RunnerResult,
   PatchSubmission,
+  PrivateOracleDescriptor,
+  PrivateOracleDescriptorKind,
   PrSubmissionEnvelope,
   PublicMetrics,
   SolutionRecording,
@@ -33,6 +37,163 @@ export const MAX_PR_PATCH_BYTES = 100_000;
 export const MAX_PR_PATCH_FILES = 20;
 export const MAX_PR_FILE_BYTES = 50_000;
 export const MAX_SANITIZED_JUDGE_SUMMARY_BYTES = 16_384;
+export const BENCHMARK_EXECUTION_POLICIES = [
+  {
+    benchmarkId: "humaneval",
+    maxPatchBytes: 100_000,
+    maxPatchFiles: 20,
+    maxFileBytes: 50_000,
+    resources: { timeoutSeconds: 60, cpuCores: 1, memoryMb: 512, networkPolicy: "blocked" },
+  },
+  {
+    benchmarkId: "mbpp",
+    maxPatchBytes: 100_000,
+    maxPatchFiles: 20,
+    maxFileBytes: 50_000,
+    resources: { timeoutSeconds: 60, cpuCores: 1, memoryMb: 512, networkPolicy: "blocked" },
+  },
+  {
+    benchmarkId: "quixbugs",
+    maxPatchBytes: 150_000,
+    maxPatchFiles: 10,
+    maxFileBytes: 75_000,
+    resources: { timeoutSeconds: 120, cpuCores: 1, memoryMb: 1024, networkPolicy: "blocked" },
+  },
+  {
+    benchmarkId: "swe-bench-lite",
+    maxPatchBytes: 500_000,
+    maxPatchFiles: 50,
+    maxFileBytes: 200_000,
+    resources: { timeoutSeconds: 2700, cpuCores: 2, memoryMb: 6144, networkPolicy: "blocked" },
+    maxWorkers: 1,
+    maintainerTriggeredOnly: true,
+    explicitPrHeadShaRequired: true,
+    allowlistedInstanceRequired: true,
+    artifactRetentionDays: 7,
+    cacheKeyComponents: ["harnessCommit", "datasetRevision", "harnessImageDigest"],
+  },
+  {
+    benchmarkId: "swe-bench-verified",
+    maxPatchBytes: 500_000,
+    maxPatchFiles: 50,
+    maxFileBytes: 200_000,
+    resources: { timeoutSeconds: 2700, cpuCores: 2, memoryMb: 6144, networkPolicy: "blocked" },
+    maxWorkers: 1,
+    maintainerTriggeredOnly: true,
+    explicitPrHeadShaRequired: true,
+    allowlistedInstanceRequired: true,
+    artifactRetentionDays: 7,
+    cacheKeyComponents: ["harnessCommit", "datasetRevision", "harnessImageDigest"],
+  },
+] as const satisfies readonly BenchmarkExecutionPolicy[];
+
+export function benchmarkExecutionPolicyFor(benchmarkId: string): BenchmarkExecutionPolicy | undefined {
+  return BENCHMARK_EXECUTION_POLICIES.find((policy) => policy.benchmarkId === benchmarkId);
+}
+
+export function defaultBenchmarkExecutionPolicy(): BenchmarkExecutionPolicy {
+  return BENCHMARK_EXECUTION_POLICIES[0];
+}
+export function validateBenchmarkResources(benchmarkId: string, resources: unknown): ValidationResult {
+  const issues: ValidationIssue[] = [];
+  const policy = benchmarkExecutionPolicyFor(benchmarkId);
+  if (!policy) {
+    issues.push(issue("benchmarkPolicy.unknown", "Benchmark must have an explicit execution policy before scored judging."));
+    return result(issues);
+  }
+  if (!resources || typeof resources !== "object" || Array.isArray(resources)) {
+    issues.push(issue("benchmarkPolicy.resources.malformed", "Benchmark resources must be an object."));
+    return result(issues);
+  }
+  const actual = resources as Partial<BenchmarkExecutionPolicy["resources"]>;
+  if (actual.timeoutSeconds !== policy.resources.timeoutSeconds) {
+    issues.push(issue("benchmarkPolicy.timeout.mismatch", `Benchmark timeout must be ${policy.resources.timeoutSeconds} seconds.`));
+  }
+  if (actual.cpuCores !== policy.resources.cpuCores) {
+    issues.push(issue("benchmarkPolicy.cpu.mismatch", `Benchmark CPU limit must be ${policy.resources.cpuCores}.`));
+  }
+  if (actual.memoryMb !== policy.resources.memoryMb) {
+    issues.push(issue("benchmarkPolicy.memory.mismatch", `Benchmark memory limit must be ${policy.resources.memoryMb}MB.`));
+  }
+  if (actual.networkPolicy !== policy.resources.networkPolicy) {
+    issues.push(issue("benchmarkPolicy.network.mismatch", "Benchmark network policy must remain blocked."));
+  }
+  return result(issues);
+}
+function policyForValidation(
+  options: { benchmarkId?: string; submissionPolicy?: BenchmarkExecutionPolicy },
+  issues: ValidationIssue[],
+  prefix: string,
+): BenchmarkExecutionPolicy {
+  if (options.submissionPolicy) return options.submissionPolicy;
+  if (options.benchmarkId) {
+    const policy = benchmarkExecutionPolicyFor(options.benchmarkId);
+    if (policy) return policy;
+    issues.push(issue(`${prefix}.benchmarkPolicy.unknown`, "Benchmark execution policy is unknown."));
+    return defaultBenchmarkExecutionPolicy();
+  }
+  issues.push(issue(`${prefix}.benchmarkPolicy.required`, "Benchmark execution policy is required before judging."));
+  return defaultBenchmarkExecutionPolicy();
+}
+
+export interface BenchmarkExecutionRequestContext {
+  benchmarkId: string;
+  resources: unknown;
+  trigger?: "pull_request" | "workflow_dispatch" | "manual";
+  prHeadSha?: string;
+  instanceId?: string;
+  allowedInstanceIds?: readonly string[];
+  maxWorkers?: number;
+  artifactRetentionDays?: number;
+  cacheKey?: string;
+  harnessCommit?: string;
+  datasetRevision?: string;
+  harnessImageDigest?: string;
+}
+
+export function validateBenchmarkExecutionRequest(context: BenchmarkExecutionRequestContext): ValidationResult {
+  const issues: ValidationIssue[] = [];
+  const policy = benchmarkExecutionPolicyFor(context.benchmarkId);
+  if (!policy) {
+    issues.push(issue("benchmarkPolicy.unknown", "Benchmark must have an explicit execution policy before execution."));
+    return result(issues);
+  }
+  issues.push(...validateBenchmarkResources(context.benchmarkId, context.resources).issues);
+
+  if (policy.maintainerTriggeredOnly && context.trigger !== "workflow_dispatch" && context.trigger !== "manual") {
+    issues.push(issue("benchmarkPolicy.trigger.maintainerRequired", "Benchmark execution must be maintainer-triggered."));
+  }
+  if (policy.explicitPrHeadShaRequired && !/^[0-9a-f]{40}$/i.test(context.prHeadSha ?? "")) {
+    issues.push(issue("benchmarkPolicy.prHeadSha.required", "Benchmark execution requires an explicit PR head SHA."));
+  }
+  if (policy.allowlistedInstanceRequired) {
+    if (!present(context.instanceId)) {
+      issues.push(issue("benchmarkPolicy.instance.required", "Benchmark execution requires an explicit instance id."));
+    } else if (!context.allowedInstanceIds?.includes(context.instanceId)) {
+      issues.push(issue("benchmarkPolicy.instance.allowlist", "Benchmark instance id must be allowlisted."));
+    }
+  }
+  if (policy.maxWorkers !== undefined && context.maxWorkers !== policy.maxWorkers) {
+    issues.push(issue("benchmarkPolicy.maxWorkers.mismatch", `Benchmark max_workers must be ${policy.maxWorkers}.`));
+  }
+  if (policy.artifactRetentionDays !== undefined && context.artifactRetentionDays !== policy.artifactRetentionDays) {
+    issues.push(issue("benchmarkPolicy.artifactRetention.mismatch", `Benchmark artifacts must retain for ${policy.artifactRetentionDays} days.`));
+  }
+  if (policy.cacheKeyComponents?.length) {
+    const expectedCacheKey =
+      present(context.harnessCommit) && present(context.datasetRevision) && dockerImageHasDigest(context.harnessImageDigest)
+        ? swebenchDescriptorCacheKey({
+            harnessCommit: context.harnessCommit!,
+            datasetRevision: context.datasetRevision!,
+            harnessImageDigest: context.harnessImageDigest!,
+          })
+        : null;
+    if (!expectedCacheKey || context.cacheKey !== expectedCacheKey) {
+      issues.push(issue("benchmarkPolicy.cacheKey.mismatch", "Benchmark cache key must bind harnessCommit, datasetRevision, and harnessImageDigest."));
+    }
+  }
+  return result(issues);
+}
 
 const SUPPORTED_PR_SUBMISSION_EXTENSIONS = new Set([
   ".c",
@@ -131,6 +292,51 @@ const PR_SUBMISSION_ENVELOPE_KEYS = new Set([
 
 const PR_SUBMISSION_FILE_KEYS = new Set(["path", "changeType", "gitMode", "byteSize", "isBinary", "isSymlink"]);
 const PATCH_STATS_KEYS = new Set(["filesChanged", "locAdded", "locDeleted"]);
+const PRIVATE_ORACLE_EVIDENCE_KEYS = new Set(["originalEvidenceId", "rerunEvidenceId"]);
+const PRIVATE_ORACLE_BUNDLE_KEYS = new Set(["schemaVersion", "descriptors", "problems"]);
+const PRIVATE_ORACLE_BASE_KEYS = new Set([
+  "schemaVersion",
+  "problemId",
+  "benchmarkId",
+  "adapterId",
+  "upstreamTaskId",
+  "oracleKind",
+  "evidencePolicy",
+  "descriptorRevision",
+]);
+const PYTHON_FUNCTION_DESCRIPTOR_KEYS = new Set([...PRIVATE_ORACLE_BASE_KEYS, "entryPoint", "cases"]);
+const PYTHON_FUNCTION_TESTS_DESCRIPTOR_KEYS = new Set([...PRIVATE_ORACLE_BASE_KEYS, "entryPoint", "testSource", "testSourceHash"]);
+const PYTHON_FUNCTION_CASE_KEYS = new Set(["id", "args", "expected"]);
+const COMMAND_DESCRIPTOR_KEYS = new Set([
+  ...PRIVATE_ORACLE_BASE_KEYS,
+  "commandId",
+  "allowedTargets",
+  "hiddenTestBundleHash",
+  "expectedExitCode",
+  "testSource",
+  "testSourceHash",
+  "fixtureRef",
+  "fixtureHash",
+]);
+const SWEBENCH_DESCRIPTOR_KEYS = new Set([
+  ...PRIVATE_ORACLE_BASE_KEYS,
+  "datasetName",
+  "datasetRevision",
+  "split",
+  "instanceId",
+  "repo",
+  "baseCommit",
+  "harnessCommit",
+  "harnessImageDigest",
+  "predictionJsonlSchemaHash",
+  "cacheKey",
+]);
+const PRIVATE_ORACLE_KINDS = new Set<PrivateOracleDescriptorKind>([
+  "python-function-cases",
+  "python-function-tests",
+  "command-hidden-tests",
+  "swebench-upstream-harness",
+]);
 const SANITIZED_JUDGE_SUMMARY_KEYS = new Set([
   "schemaVersion",
   "submissionId",
@@ -153,7 +359,17 @@ const FORBIDDEN_PUBLIC_TEXT_PATTERNS: readonly RegExp[] = [
   /\breasoning[-_\s]?trace\b/i,
   /\b(?:stdout|stderr)\b/i,
   /diff --git/i,
+  /^index [0-9a-f]+\.\.[0-9a-f]+(?: [0-9]{6})?$/im,
   /^@@\s/m,
+  /^(?:---|\+\+\+)\s/m,
+  /^\s*[+-]\s*(?:return\b|assert\b|def\b|leaked_line|removed_line)/m,
+  /^[+-].+$/m,
+  /SHOULD_NOT_LEAK_PATCH/i,
+  /\breturn\s+(?:xs\[0\]|missing|text\[::-1\])\b/i,
+  /\bRan \d+ tests?\b/i,
+  /^OK$/m,
+  /Traceback \(most recent call last\):/i,
+  /\bAssertionError\b/i,
   /(?:^|\s)\/[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)+/m,
   /\b[A-Za-z0-9._-]+\.sqlite\b/i,
   /\bdatabase[_-\s]?url\s*(?:=|:)\s*\S+/i,
@@ -167,6 +383,10 @@ const FORBIDDEN_PUBLIC_TEXT_PATTERNS: readonly RegExp[] = [
   /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/,
   /\bhttps?:\/\/[^/\s:@]+:[^/\s@]+@[^/\s]+/i,
   /\b(?:oracle(?:[-_\s]?(?:path|file|dir|directory|descriptor))?|hidden[-_\s]?case|test[-_\s]?case|result[-_\s]?bundle|api[-_\s]?origin|container[-_\s]?(?:id|name|path))\s*(?:=|:)\s*\S+/i,
+  /\bdef\s+test_[A-Za-z0-9_]*\s*\(/i,
+  /\bfrom\s+python_programs\.[A-Za-z0-9_]+\s+import\b/i,
+  /\bassert\s+[A-Za-z_][\w.]*\([^)]*\)\s*==/i,
+  /\bhidden[-_\s]?(?:test|tests|pytest|descriptor|bundle|source)\b/i,
   /\b(?:\/[A-Za-z0-9._-]+)+(?:\/(?:oracle|hidden|cases?|result[-_]?bundle|container)[A-Za-z0-9._-]*)+\b/i,
   /(?:s&#(?:101|x65);cret|t&#(?:111|x6f);ken)\s*(?:=|:|&equals;)\s*\S+/i,
 ];
@@ -176,6 +396,299 @@ const ALLOWED_NORMAL_GIT_MODES = new Set(["100644", "100755"]);
 
 function result(issues: ValidationIssue[]): ValidationResult {
   return { ok: issues.length === 0, issues };
+}
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasOwn(value: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function dockerImageHasDigest(value: string | undefined): boolean {
+  return present(value) && /@sha256:[0-9a-f]{64}$/i.test(value);
+}
+
+export function swebenchDescriptorCacheKey(input: {
+  harnessCommit: string;
+  datasetRevision: string;
+  harnessImageDigest: string;
+}): string {
+  return `swebench:${input.harnessCommit}:${input.datasetRevision}:${input.harnessImageDigest}`;
+}
+
+function collectRequiredString(value: Record<string, unknown>, key: string, prefix: string, issues: ValidationIssue[]): void {
+  if (!present(value[key] as string | undefined)) {
+    issues.push(issue(`${prefix}.${key}.required`, `${key} is required.`));
+  }
+}
+
+function validatePrivateOracleEvidencePolicy(value: unknown, prefix: string, issues: ValidationIssue[]): void {
+  if (!isPlainRecord(value)) {
+    issues.push(issue(`${prefix}.evidencePolicy.required`, "Private oracle evidence policy is required."));
+    return;
+  }
+  collectUnknownKeys(value, PRIVATE_ORACLE_EVIDENCE_KEYS, `${prefix}.evidencePolicy`, issues);
+  const original = value.originalEvidenceId as string | undefined;
+  const rerun = value.rerunEvidenceId as string | undefined;
+  if (!present(original)) issues.push(issue(`${prefix}.evidencePolicy.original.required`, "Original evidence id is required."));
+  if (!present(rerun)) issues.push(issue(`${prefix}.evidencePolicy.rerun.required`, "Rerun evidence id is required."));
+  if (present(original) && original === rerun) {
+    issues.push(issue(`${prefix}.evidencePolicy.rerunDistinct`, "Original and rerun evidence ids must be distinct."));
+  }
+}
+
+function validatePythonFunctionCases(value: unknown, prefix: string, issues: ValidationIssue[]): void {
+  if (!Array.isArray(value) || value.length === 0) {
+    issues.push(issue(`${prefix}.cases.required`, "Python function descriptors require non-empty cases."));
+    return;
+  }
+  value.forEach((entry, index) => {
+    const casePrefix = `${prefix}.cases[${index}]`;
+    if (!isPlainRecord(entry)) {
+      issues.push(issue(`${casePrefix}.malformed`, "Python function case must be an object."));
+      return;
+    }
+    collectUnknownKeys(entry, PYTHON_FUNCTION_CASE_KEYS, casePrefix, issues);
+    if (!present(entry.id as string | undefined)) issues.push(issue(`${casePrefix}.id.required`, "Case id is required."));
+    if (!Array.isArray(entry.args)) issues.push(issue(`${casePrefix}.args.required`, "Case args must be an array."));
+    if (!hasOwn(entry, "expected")) issues.push(issue(`${casePrefix}.expected.required`, "Case expected value is required."));
+  });
+}
+
+export function validatePrivateOracleDescriptor(
+  input: unknown,
+  expected: { problemId?: string; benchmarkId?: string; adapterId?: string; upstreamTaskId?: string } = {},
+): ValidationResult {
+  const issues: ValidationIssue[] = [];
+  if (!isPlainRecord(input)) {
+    issues.push(issue("privateOracleDescriptor.malformed", "Private oracle descriptor must be an object."));
+    return result(issues);
+  }
+
+  const descriptor = input as Record<string, unknown>;
+  const kind = descriptor.oracleKind as PrivateOracleDescriptorKind | undefined;
+  const prefix = "privateOracleDescriptor";
+  if (descriptor.schemaVersion !== 2) {
+    issues.push(issue("privateOracleDescriptor.schemaVersion.unsupported", "Private oracle descriptor schemaVersion must be 2."));
+  }
+  if (!kind || !PRIVATE_ORACLE_KINDS.has(kind)) {
+    issues.push(issue("privateOracleDescriptor.oracleKind.invalid", "Private oracle descriptor oracleKind is not supported."));
+  }
+
+  const allowedKeys =
+    kind === "python-function-cases"
+      ? PYTHON_FUNCTION_DESCRIPTOR_KEYS
+      : kind === "python-function-tests"
+        ? PYTHON_FUNCTION_TESTS_DESCRIPTOR_KEYS
+        : kind === "command-hidden-tests"
+          ? COMMAND_DESCRIPTOR_KEYS
+          : kind === "swebench-upstream-harness"
+            ? SWEBENCH_DESCRIPTOR_KEYS
+            : PRIVATE_ORACLE_BASE_KEYS;
+  collectUnknownKeys(descriptor, allowedKeys, prefix, issues);
+
+  for (const key of ["problemId", "benchmarkId", "adapterId", "upstreamTaskId"] as const) {
+    collectRequiredString(descriptor, key, prefix, issues);
+    if (expected[key] && descriptor[key] !== expected[key]) {
+      issues.push(issue(`privateOracleDescriptor.${key}.mismatch`, `Descriptor ${key} does not match the expected target.`));
+    }
+  }
+  validatePrivateOracleEvidencePolicy(descriptor.evidencePolicy, prefix, issues);
+
+  if (kind === "python-function-cases") {
+    collectRequiredString(descriptor, "entryPoint", prefix, issues);
+    validatePythonFunctionCases(descriptor.cases, prefix, issues);
+  } else if (kind === "python-function-tests") {
+    collectRequiredString(descriptor, "entryPoint", prefix, issues);
+    collectRequiredString(descriptor, "testSource", prefix, issues);
+    if (!isSha256Ref(descriptor.testSourceHash as string | undefined)) {
+      issues.push(issue("privateOracleDescriptor.testSourceHash.invalid", "Python function test source hash must be sha256:<64 hex>."));
+    } else if (present(descriptor.testSource as string | undefined) && descriptor.testSourceHash !== sha256Ref(descriptor.testSource as string)) {
+      issues.push(issue("privateOracleDescriptor.testSourceHash.mismatch", "Python function test source hash must match testSource."));
+    }
+  } else if (kind === "command-hidden-tests") {
+    collectRequiredString(descriptor, "commandId", prefix, issues);
+    if (!nonEmptyStringArray(descriptor.allowedTargets)) {
+      issues.push(issue("privateOracleDescriptor.allowedTargets.required", "Command hidden-test descriptors require non-empty allowedTargets."));
+    } else {
+      for (const [index, target] of (descriptor.allowedTargets as string[]).entries()) {
+        if (!isSafeRelativeSubmissionPath(target)) {
+          issues.push(issue(`privateOracleDescriptor.allowedTargets[${index}].invalid`, "Command hidden-test allowedTargets must be safe relative paths."));
+        }
+      }
+    }
+    if (!isSha256Ref(descriptor.hiddenTestBundleHash as string | undefined)) {
+      issues.push(issue("privateOracleDescriptor.hiddenTestBundleHash.invalid", "Hidden test bundle hash must be sha256:<64 hex>."));
+    }
+    if (!nonNegativeInteger(descriptor.expectedExitCode as number)) {
+      issues.push(issue("privateOracleDescriptor.expectedExitCode.invalid", "Expected exit code must be a non-negative integer."));
+    }
+    if (descriptor.commandId === "pytest-hidden" && descriptor.expectedExitCode !== 0) {
+      issues.push(issue("privateOracleDescriptor.expectedExitCode.unsupported", "pytest-hidden descriptors must expect exit code 0."));
+    }
+    collectRequiredString(descriptor, "testSource", prefix, issues);
+    if (!isSha256Ref(descriptor.testSourceHash as string | undefined)) {
+      issues.push(issue("privateOracleDescriptor.testSourceHash.invalid", "Command hidden-test source hash must be sha256:<64 hex>."));
+    } else if (present(descriptor.testSource as string | undefined) && descriptor.testSourceHash !== sha256Ref(descriptor.testSource as string)) {
+      issues.push(issue("privateOracleDescriptor.testSourceHash.mismatch", "Command hidden-test source hash must match testSource."));
+    }
+    if (
+      isSha256Ref(descriptor.hiddenTestBundleHash as string | undefined) &&
+      isSha256Ref(descriptor.testSourceHash as string | undefined) &&
+      descriptor.hiddenTestBundleHash !== descriptor.testSourceHash
+    ) {
+      issues.push(issue("privateOracleDescriptor.hiddenTestBundleHash.mismatch", "Hidden test bundle hash must match testSourceHash."));
+    }
+  } else if (kind === "swebench-upstream-harness") {
+    for (const key of [
+      "datasetName",
+      "datasetRevision",
+      "split",
+      "instanceId",
+      "repo",
+      "baseCommit",
+      "harnessCommit",
+      "cacheKey",
+    ] as const) {
+      collectRequiredString(descriptor, key, prefix, issues);
+    }
+    if (!dockerImageHasDigest(descriptor.harnessImageDigest as string | undefined)) {
+      issues.push(issue("privateOracleDescriptor.harnessImageDigest.invalid", "SWE-bench harness image must be pinned as image@sha256:<64 hex>."));
+    }
+    if (!isSha256Ref(descriptor.predictionJsonlSchemaHash as string | undefined)) {
+      issues.push(issue("privateOracleDescriptor.predictionJsonlSchemaHash.invalid", "Prediction JSONL schema hash must be sha256:<64 hex>."));
+    }
+    const cacheKeyInput = {
+      harnessCommit: descriptor.harnessCommit as string | undefined,
+      datasetRevision: descriptor.datasetRevision as string | undefined,
+      harnessImageDigest: descriptor.harnessImageDigest as string | undefined,
+    };
+    if (
+      present(cacheKeyInput.harnessCommit) &&
+      present(cacheKeyInput.datasetRevision) &&
+      dockerImageHasDigest(cacheKeyInput.harnessImageDigest) &&
+      descriptor.cacheKey !== swebenchDescriptorCacheKey(cacheKeyInput as { harnessCommit: string; datasetRevision: string; harnessImageDigest: string })
+    ) {
+      issues.push(issue("privateOracleDescriptor.cacheKey.mismatch", "SWE-bench cacheKey must bind harnessCommit, datasetRevision, and harnessImageDigest."));
+    }
+  }
+
+  return result(issues);
+}
+
+
+function sha256Ref(value: string): string {
+  return `sha256:${createHash("sha256").update(value).digest("hex")}`;
+}
+
+function canonicalEvidencePolicy(descriptor: PrivateOracleDescriptor) {
+  return {
+    originalEvidenceId: descriptor.evidencePolicy.originalEvidenceId,
+    rerunEvidenceId: descriptor.evidencePolicy.rerunEvidenceId,
+  };
+}
+
+function canonicalPrivateOracleDescriptor(descriptor: PrivateOracleDescriptor): PrivateOracleDescriptor {
+  const common = {
+    schemaVersion: descriptor.schemaVersion,
+    problemId: descriptor.problemId,
+    benchmarkId: descriptor.benchmarkId,
+    adapterId: descriptor.adapterId,
+    upstreamTaskId: descriptor.upstreamTaskId,
+    oracleKind: descriptor.oracleKind,
+  };
+
+  if (descriptor.oracleKind === "python-function-cases") {
+    return {
+      ...common,
+      oracleKind: descriptor.oracleKind,
+      entryPoint: descriptor.entryPoint,
+      cases: descriptor.cases.map((entry) => ({ id: entry.id, args: entry.args, expected: entry.expected })),
+      evidencePolicy: canonicalEvidencePolicy(descriptor),
+      ...(descriptor.descriptorRevision ? { descriptorRevision: descriptor.descriptorRevision } : {}),
+    };
+  }
+  if (descriptor.oracleKind === "python-function-tests") {
+    return {
+      ...common,
+      oracleKind: descriptor.oracleKind,
+      entryPoint: descriptor.entryPoint,
+      testSource: descriptor.testSource,
+      testSourceHash: descriptor.testSourceHash,
+      evidencePolicy: canonicalEvidencePolicy(descriptor),
+      ...(descriptor.descriptorRevision ? { descriptorRevision: descriptor.descriptorRevision } : {}),
+    };
+  }
+  if (descriptor.oracleKind === "command-hidden-tests") {
+    return {
+      ...common,
+      oracleKind: descriptor.oracleKind,
+      commandId: descriptor.commandId,
+      allowedTargets: descriptor.allowedTargets,
+      hiddenTestBundleHash: descriptor.hiddenTestBundleHash,
+      expectedExitCode: descriptor.expectedExitCode,
+      testSource: descriptor.testSource,
+      testSourceHash: descriptor.testSourceHash,
+      evidencePolicy: canonicalEvidencePolicy(descriptor),
+      ...(descriptor.descriptorRevision ? { descriptorRevision: descriptor.descriptorRevision } : {}),
+      ...(descriptor.fixtureRef ? { fixtureRef: descriptor.fixtureRef } : {}),
+      ...(descriptor.fixtureHash ? { fixtureHash: descriptor.fixtureHash } : {}),
+    };
+  }
+  return {
+    ...common,
+    oracleKind: descriptor.oracleKind,
+    datasetName: descriptor.datasetName,
+    datasetRevision: descriptor.datasetRevision,
+    split: descriptor.split,
+    instanceId: descriptor.instanceId,
+    repo: descriptor.repo,
+    baseCommit: descriptor.baseCommit,
+    harnessCommit: descriptor.harnessCommit,
+    harnessImageDigest: descriptor.harnessImageDigest,
+    predictionJsonlSchemaHash: descriptor.predictionJsonlSchemaHash,
+    cacheKey: descriptor.cacheKey,
+    evidencePolicy: canonicalEvidencePolicy(descriptor),
+    ...(descriptor.descriptorRevision ? { descriptorRevision: descriptor.descriptorRevision } : {}),
+  };
+}
+function versionedCanonicalPrivateOracleDescriptor(
+  target: { problemId: string; benchmarkId?: string; adapterId?: string; upstreamTaskId?: string; expectedOracleDescriptorHash?: string },
+  value: unknown,
+): { canonicalJson: string; descriptor: PrivateOracleDescriptor } | null {
+  const validation = validatePrivateOracleDescriptor(value, target);
+  if (!validation.ok) return null;
+  const descriptor = value as PrivateOracleDescriptor;
+  const canonicalJson = JSON.stringify(canonicalPrivateOracleDescriptor(descriptor));
+  if (target.expectedOracleDescriptorHash && sha256Ref(canonicalJson) !== target.expectedOracleDescriptorHash) return null;
+  return { canonicalJson, descriptor };
+}
+
+export function selectCanonicalPrivateOracleDescriptor(
+  target: { problemId: string; benchmarkId?: string; adapterId?: string; upstreamTaskId?: string; expectedOracleDescriptorHash?: string },
+  parsed: unknown,
+): { canonicalJson: string; descriptor: PrivateOracleDescriptor } | null {
+  const directVersioned = versionedCanonicalPrivateOracleDescriptor(target, parsed);
+  if (directVersioned) return directVersioned;
+
+  if (!isPlainRecord(parsed) || parsed.schemaVersion !== 2) return null;
+  const bundleIssues: ValidationIssue[] = [];
+  collectUnknownKeys(parsed, PRIVATE_ORACLE_BUNDLE_KEYS, "privateOracleBundle", bundleIssues);
+  if (bundleIssues.length > 0) return null;
+
+  const bundle = parsed as { descriptors?: unknown; problems?: unknown };
+  if (Array.isArray(bundle.descriptors)) {
+    for (const entry of bundle.descriptors) {
+      const selected = versionedCanonicalPrivateOracleDescriptor(target, entry);
+      if (selected) return selected;
+    }
+  }
+  if (isPlainRecord(bundle.problems)) {
+    const selected = bundle.problems[target.problemId];
+    if (selected !== undefined) return versionedCanonicalPrivateOracleDescriptor(target, selected);
+  }
+  return null;
 }
 
 function issue(code: string, message: string): ValidationIssue {
@@ -206,7 +719,21 @@ function hasRequiredSet<T extends string>(actual: readonly T[], required: readon
 }
 
 function isPublicRecordingLink(value: string | undefined): boolean {
-  return present(value) && (value.startsWith("https://") || value.startsWith("/recordings/"));
+  if (!present(value)) return false;
+  if (/^\/recordings\/[A-Za-z0-9._-]+$/.test(value)) return true;
+  try {
+    const parsed = new URL(value);
+    return (
+      parsed.protocol === "https:" &&
+      parsed.username === "" &&
+      parsed.password === "" &&
+      parsed.search === "" &&
+      parsed.hash === "" &&
+      /^\/recordings\/[A-Za-z0-9._-]+$/.test(parsed.pathname)
+    );
+  } catch {
+    return false;
+  }
 }
 
 function nonNegativeInteger(value: number): boolean {
@@ -292,14 +819,15 @@ function validatePatchStats(
   stats: PrSubmissionEnvelope["patchStats"] | SanitizedPrJudgeSummary["patchStats"] | undefined,
   issues: ValidationIssue[],
   prefix: string,
+  maxFiles = MAX_PR_PATCH_FILES,
 ): void {
   if (!stats || typeof stats !== "object") {
     issues.push(issue(`${prefix}.patchStats.required`, "Patch stats are required."));
     return;
   }
   collectUnknownKeys(stats as Record<string, unknown>, PATCH_STATS_KEYS, `${prefix}.patchStats`, issues);
-  if (!boundedPositiveInteger(stats.filesChanged, MAX_PR_PATCH_FILES)) {
-    issues.push(issue(`${prefix}.filesChanged.bounds`, `Patch may touch 1-${MAX_PR_PATCH_FILES} files.`));
+  if (!boundedPositiveInteger(stats.filesChanged, maxFiles)) {
+    issues.push(issue(`${prefix}.filesChanged.bounds`, `Patch may touch 1-${maxFiles} files.`));
   }
   if (!nonNegativeInteger(stats.locAdded)) {
     issues.push(issue(`${prefix}.locAdded.nonNegative`, "Patch additions must be a non-negative integer."));
@@ -355,6 +883,8 @@ export function validatePrSubmissionEnvelope(
     enabledProblemIds?: readonly string[];
     enabledAdapterIds?: readonly string[];
     requirePrHeadSha?: boolean;
+    benchmarkId?: string;
+    submissionPolicy?: BenchmarkExecutionPolicy;
   } = {},
 ): ValidationResult {
   const issues: ValidationIssue[] = [];
@@ -364,6 +894,7 @@ export function validatePrSubmissionEnvelope(
     return result(issues);
   }
   const envelope = input as PrSubmissionEnvelope;
+  const submissionPolicy = policyForValidation(options, issues, "prSubmission");
   collectUnknownKeys(input as Record<string, unknown>, PR_SUBMISSION_ENVELOPE_KEYS, "prSubmission", issues);
 
   if (envelope.schemaVersion !== PR_SUBMISSION_SCHEMA_VERSION) {
@@ -390,15 +921,15 @@ export function validatePrSubmissionEnvelope(
   if (!/^sha256:[0-9a-f]{64}$/i.test(envelope.patchSha256 ?? "")) {
     issues.push(issue("prSubmission.patchSha256.invalid", "Patch SHA-256 must be recorded as sha256:<64 hex>."));
   }
-  if (!boundedPositiveInteger(envelope.patchBytes, MAX_PR_PATCH_BYTES)) {
-    issues.push(issue("prSubmission.patchBytes.bounds", `Patch must be 1-${MAX_PR_PATCH_BYTES} bytes.`));
+  if (!boundedPositiveInteger(envelope.patchBytes, submissionPolicy.maxPatchBytes)) {
+    issues.push(issue("prSubmission.patchBytes.bounds", `Patch must be 1-${submissionPolicy.maxPatchBytes} bytes.`));
   }
-  validatePatchStats(envelope.patchStats, issues, "prSubmission");
+  validatePatchStats(envelope.patchStats, issues, "prSubmission", submissionPolicy.maxPatchFiles);
 
   if (!Array.isArray(envelope.files) || envelope.files.length === 0) {
     issues.push(issue("prSubmission.files.required", "At least one changed file is required."));
-  } else if (envelope.files.length > MAX_PR_PATCH_FILES) {
-    issues.push(issue("prSubmission.files.tooMany", `PR submission may touch at most ${MAX_PR_PATCH_FILES} files.`));
+  } else if (envelope.files.length > submissionPolicy.maxPatchFiles) {
+    issues.push(issue("prSubmission.files.tooMany", `PR submission may touch at most ${submissionPolicy.maxPatchFiles} files.`));
   } else if (envelope.patchStats?.filesChanged !== envelope.files.length) {
     issues.push(issue("prSubmission.files.statsMismatch", "Changed file count must match patch stats."));
   }
@@ -422,8 +953,8 @@ export function validatePrSubmissionEnvelope(
     if (!ALLOWED_NORMAL_GIT_MODES.has(file.gitMode)) {
       issues.push(issue("prSubmission.file.modeUnsafe", "Changed files must use a normal file git mode."));
     }
-    if (!boundedPositiveInteger(file.byteSize, MAX_PR_FILE_BYTES)) {
-      issues.push(issue("prSubmission.file.byteSize.bounds", `Changed files must be 1-${MAX_PR_FILE_BYTES} bytes.`));
+    if (!boundedPositiveInteger(file.byteSize, submissionPolicy.maxFileBytes)) {
+      issues.push(issue("prSubmission.file.byteSize.bounds", `Changed files must be 1-${submissionPolicy.maxFileBytes} bytes.`));
     }
     if (file.isBinary !== false) {
       issues.push(issue("prSubmission.file.binary.forbidden", "Binary patches are forbidden for PR judging."));
@@ -442,7 +973,7 @@ export function validatePrSubmissionEnvelope(
 
 export function validateSanitizedPrJudgeSummary(
   input: unknown,
-  options: { enabledProblemIds?: readonly string[]; enabledAdapterIds?: readonly string[] } = {},
+  options: { enabledProblemIds?: readonly string[]; enabledAdapterIds?: readonly string[]; benchmarkId?: string; submissionPolicy?: BenchmarkExecutionPolicy } = {},
 ): ValidationResult {
   const issues: ValidationIssue[] = [];
   collectForbiddenPublicPayloadIssues(input, "summary", issues);
@@ -451,6 +982,10 @@ export function validateSanitizedPrJudgeSummary(
     return result(issues);
   }
   const summary = input as SanitizedPrJudgeSummary;
+  const summaryPolicy =
+    summary.status === "invalid"
+      ? defaultBenchmarkExecutionPolicy()
+      : policyForValidation(options, issues, "prJudgeSummary");
   collectUnknownKeys(input as Record<string, unknown>, SANITIZED_JUDGE_SUMMARY_KEYS, "prJudgeSummary", issues);
 
 
@@ -499,7 +1034,7 @@ export function validateSanitizedPrJudgeSummary(
   if (!nonNegativeInteger(summary.runtimeMs)) {
     issues.push(issue("prJudgeSummary.runtime.bounds", "Runtime must be a non-negative integer in milliseconds."));
   }
-  validatePatchStats(summary.patchStats, issues, "prJudgeSummary");
+  validatePatchStats(summary.patchStats, issues, "prJudgeSummary", summaryPolicy.maxPatchFiles);
   if (!Array.isArray(summary.validationMessages) || summary.validationMessages.length > 20) {
     issues.push(issue("prJudgeSummary.messages.bounds", "Judge summary may include at most 20 validation messages."));
   } else if (!summary.validationMessages.every((message) => present(message) && message.length <= 240)) {
@@ -575,6 +1110,7 @@ export function validateAdapter(adapter: Adapter, benchmark: Benchmark): Validat
   if (adapter.defaultResources.networkPolicy !== "blocked") {
     issues.push(issue("adapter.network.blocked", "MVP adapters must default to blocked network."));
   }
+  issues.push(...validateBenchmarkResources(adapter.benchmarkId, adapter.defaultResources).issues);
   if (adapter.supportedHostingModes.length === 0) {
     issues.push(issue("adapter.hostingModes.required", "Adapter must declare supported hosting modes."));
   }
@@ -621,8 +1157,8 @@ export function validateProblem(problem: Problem, benchmark: Benchmark, adapter:
   if (problem.scoringMode !== undefined && problem.scoringMode !== "demo-public" && problem.scoringMode !== "scored-hidden") {
     issues.push(issue("problem.scoringMode.invalid", "Problem scoringMode must be demo-public or scored-hidden."));
   }
-  if (problem.scoringMode === "demo-public" && problem.oracleMetadata !== undefined) {
-    issues.push(issue("problem.oracleMetadata.demoForbidden", "Demo-public problems must not carry oracle metadata."));
+  if (problem.scoringMode !== "scored-hidden" && problem.oracleMetadata !== undefined) {
+    issues.push(issue("problem.oracleMetadata.scoredOnly", "Only scored-hidden problems may carry oracle metadata."));
   }
   if (problem.scoringMode === "scored-hidden") {
     const oracle = problem.oracleMetadata;
@@ -638,14 +1174,12 @@ export function validateProblem(problem: Problem, benchmark: Benchmark, adapter:
       if (!isSha256Ref(oracle.oracleDescriptorHash)) {
         issues.push(issue("problem.oracleMetadata.descriptorHash", "Oracle descriptor hash must be sha256:<64 hex>."));
       }
-      if (!present(oracle.originalEvidenceId)) {
-        issues.push(issue("problem.oracleMetadata.originalEvidence", "Original judge evidence id is required."));
-      }
-      if (!present(oracle.rerunEvidenceId)) {
-        issues.push(issue("problem.oracleMetadata.rerunEvidence", "Independent rerun evidence id is required."));
-      }
-      if (oracle.originalEvidenceId === oracle.rerunEvidenceId) {
-        issues.push(issue("problem.oracleMetadata.rerunDistinct", "Original and rerun evidence ids must be distinct."));
+      if (
+        present(oracle.originalEvidenceId) &&
+        present(oracle.rerunEvidenceId) &&
+        oracle.originalEvidenceId === oracle.rerunEvidenceId
+      ) {
+        issues.push(issue("problem.oracleMetadata.rerunDistinct", "Original and rerun evidence ids must be distinct when public metadata includes them."));
       }
     }
   }
@@ -851,6 +1385,15 @@ export function validateMcpSearchQuery(input: Record<string, unknown>): Validati
 
 export function validateMcpSearchResult(output: Record<string, unknown>): ValidationResult {
   const issues: ValidationIssue[] = [];
+  collectForbiddenPublicPayloadIssues(
+    {
+      actionChecklist: output.actionChecklist,
+      sourceRecordingIds: output.sourceRecordingIds,
+      applicabilityExplanation: output.applicabilityExplanation,
+    },
+    "mcp.result",
+    issues,
+  );
 
   for (const key of Object.keys(output)) {
     if (!ALLOWED_MCP_RESULT_KEYS.has(key)) {

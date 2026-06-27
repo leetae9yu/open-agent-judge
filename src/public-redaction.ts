@@ -36,7 +36,7 @@ const SECRET_PATTERNS: RegExp[] = [
   /t&#(?:111|x6f);ken\s*(?:=|:|&equals;)\s*\S+/gi,
 ];
 
-const PATCH_LINE_PATTERN = /^(?:diff --git|index [0-9a-f]+|---\s|\+\+\+\s|@@\s|[+-].+|\s*return\s+.*SHOULD_NOT_LEAK|.*SHOULD_NOT_LEAK_PATCH.*)$/i;
+const PATCH_LINE_PATTERN = /^(?:diff --git|index [0-9a-f]+\.\.[0-9a-f]+(?: [0-9]{6})?|---\s|\+\+\+\s|@@\s|[+-].+|\s*return\s+.*(?:SHOULD_NOT_LEAK|xs\[0\]|missing|text\[::-1\])|.*SHOULD_NOT_LEAK_PATCH.*)$/i;
 const INLINE_PATCH_PATTERNS: RegExp[] = [
   /diff --git/gi,
   /SHOULD_NOT_LEAK_PATCH/g,
@@ -44,6 +44,10 @@ const INLINE_PATCH_PATTERNS: RegExp[] = [
   /return\s+missing/g,
   /return\s+text\[::-1\]/g,
   /[+-]\s+(?:leaked_line|removed_line)/gi,
+  /\bRan \d+ tests?\b/gi,
+  /^OK$/gim,
+  /Traceback \(most recent call last\):/gi,
+  /\bAssertionError\b/gi,
 ];
 
 const MARKDOWN_ESCAPE_PATTERN = /([\\`*_{}\[\]<>()#+.!|>-])/g;

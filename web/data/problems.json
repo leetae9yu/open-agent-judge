@@ -6,7 +6,11 @@
     "benchmark": "HumanEval",
     "upstreamTaskId": "HumanEval/1",
     "hostingMode": "hosted",
-    "tags": ["python", "unittest", "list"]
+    "tags": [
+      "python",
+      "unittest",
+      "list"
+    ]
   },
   {
     "id": "humaneval-002",
@@ -15,7 +19,11 @@
     "benchmark": "HumanEval",
     "upstreamTaskId": "HumanEval/2",
     "hostingMode": "hosted",
-    "tags": ["python", "unittest", "list"]
+    "tags": [
+      "python",
+      "unittest",
+      "list"
+    ]
   },
   {
     "id": "humaneval-003-adapter-only",
@@ -24,6 +32,3002 @@
     "benchmark": "HumanEval",
     "upstreamTaskId": "HumanEval/3",
     "hostingMode": "adapter-only",
-    "tags": ["python", "unittest", "string"]
+    "tags": [
+      "python",
+      "unittest",
+      "string"
+    ]
+  },
+  {
+    "id": "humaneval-full-000",
+    "title": "HumanEval 000 — has close elements",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/0",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-001",
+    "title": "HumanEval 001 — separate paren groups",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/1",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-002",
+    "title": "HumanEval 002 — truncate number",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/2",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-003",
+    "title": "HumanEval 003 — below zero",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/3",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-004",
+    "title": "HumanEval 004 — mean absolute deviation",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/4",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-005",
+    "title": "HumanEval 005 — intersperse",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/5",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-006",
+    "title": "HumanEval 006 — parse nested parens",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/6",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-007",
+    "title": "HumanEval 007 — filter by substring",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/7",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-008",
+    "title": "HumanEval 008 — sum product",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/8",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-009",
+    "title": "HumanEval 009 — rolling max",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/9",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-010",
+    "title": "HumanEval 010 — make palindrome",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/10",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-011",
+    "title": "HumanEval 011 — string xor",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/11",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-012",
+    "title": "HumanEval 012 — longest",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/12",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-013",
+    "title": "HumanEval 013 — greatest common divisor",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/13",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-014",
+    "title": "HumanEval 014 — all prefixes",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/14",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-015",
+    "title": "HumanEval 015 — string sequence",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/15",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-016",
+    "title": "HumanEval 016 — count distinct characters",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/16",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-017",
+    "title": "HumanEval 017 — parse music",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/17",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-018",
+    "title": "HumanEval 018 — how many times",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/18",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-019",
+    "title": "HumanEval 019 — sort numbers",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/19",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-020",
+    "title": "HumanEval 020 — find closest elements",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/20",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-021",
+    "title": "HumanEval 021 — rescale to unit",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/21",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-022",
+    "title": "HumanEval 022 — filter integers",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/22",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-023",
+    "title": "HumanEval 023 — strlen",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/23",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-024",
+    "title": "HumanEval 024 — largest divisor",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/24",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-025",
+    "title": "HumanEval 025 — factorize",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/25",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-026",
+    "title": "HumanEval 026 — remove duplicates",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/26",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-027",
+    "title": "HumanEval 027 — flip case",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/27",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-028",
+    "title": "HumanEval 028 — concatenate",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/28",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-029",
+    "title": "HumanEval 029 — filter by prefix",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/29",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-030",
+    "title": "HumanEval 030 — get positive",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/30",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-031",
+    "title": "HumanEval 031 — is prime",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/31",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-032",
+    "title": "HumanEval 032 — find zero",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/32",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-033",
+    "title": "HumanEval 033 — sort third",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/33",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-034",
+    "title": "HumanEval 034 — unique",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/34",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-035",
+    "title": "HumanEval 035 — max element",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/35",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-036",
+    "title": "HumanEval 036 — fizz buzz",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/36",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-037",
+    "title": "HumanEval 037 — sort even",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/37",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-038",
+    "title": "HumanEval 038 — decode cyclic",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/38",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-039",
+    "title": "HumanEval 039 — prime fib",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/39",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-040",
+    "title": "HumanEval 040 — triples sum to zero",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/40",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-041",
+    "title": "HumanEval 041 — car race collision",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/41",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-042",
+    "title": "HumanEval 042 — incr list",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/42",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-043",
+    "title": "HumanEval 043 — pairs sum to zero",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/43",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-044",
+    "title": "HumanEval 044 — change base",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/44",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-045",
+    "title": "HumanEval 045 — triangle area",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/45",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-046",
+    "title": "HumanEval 046 — fib4",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/46",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-047",
+    "title": "HumanEval 047 — median",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/47",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-048",
+    "title": "HumanEval 048 — is palindrome",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/48",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-049",
+    "title": "HumanEval 049 — modp",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/49",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-050",
+    "title": "HumanEval 050 — decode shift",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/50",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-051",
+    "title": "HumanEval 051 — remove vowels",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/51",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-052",
+    "title": "HumanEval 052 — below threshold",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/52",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-053",
+    "title": "HumanEval 053 — add",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/53",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-054",
+    "title": "HumanEval 054 — same chars",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/54",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-055",
+    "title": "HumanEval 055 — fib",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/55",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-056",
+    "title": "HumanEval 056 — correct bracketing",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/56",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-057",
+    "title": "HumanEval 057 — monotonic",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/57",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-058",
+    "title": "HumanEval 058 — common",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/58",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-059",
+    "title": "HumanEval 059 — largest prime factor",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/59",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-060",
+    "title": "HumanEval 060 — sum to n",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/60",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-061",
+    "title": "HumanEval 061 — correct bracketing",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/61",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-062",
+    "title": "HumanEval 062 — derivative",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/62",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-063",
+    "title": "HumanEval 063 — fibfib",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/63",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-064",
+    "title": "HumanEval 064 — vowels count",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/64",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-065",
+    "title": "HumanEval 065 — circular shift",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/65",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-066",
+    "title": "HumanEval 066 — digitSum",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/66",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-067",
+    "title": "HumanEval 067 — fruit distribution",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/67",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-068",
+    "title": "HumanEval 068 — pluck",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/68",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-069",
+    "title": "HumanEval 069 — search",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/69",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-070",
+    "title": "HumanEval 070 — strange sort list",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/70",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-071",
+    "title": "HumanEval 071 — triangle area",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/71",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-072",
+    "title": "HumanEval 072 — will it fly",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/72",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-073",
+    "title": "HumanEval 073 — smallest change",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/73",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-074",
+    "title": "HumanEval 074 — total match",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/74",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-075",
+    "title": "HumanEval 075 — is multiply prime",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/75",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-076",
+    "title": "HumanEval 076 — is simple power",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/76",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-077",
+    "title": "HumanEval 077 — iscube",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/77",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-078",
+    "title": "HumanEval 078 — hex key",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/78",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-079",
+    "title": "HumanEval 079 — decimal to binary",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/79",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-080",
+    "title": "HumanEval 080 — is happy",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/80",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-081",
+    "title": "HumanEval 081 — numerical letter grade",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/81",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-082",
+    "title": "HumanEval 082 — prime length",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/82",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-083",
+    "title": "HumanEval 083 — starts one ends",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/83",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-084",
+    "title": "HumanEval 084 — solve",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/84",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-085",
+    "title": "HumanEval 085 — add",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/85",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-086",
+    "title": "HumanEval 086 — anti shuffle",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/86",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-087",
+    "title": "HumanEval 087 — get row",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/87",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-088",
+    "title": "HumanEval 088 — sort array",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/88",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-089",
+    "title": "HumanEval 089 — encrypt",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/89",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-090",
+    "title": "HumanEval 090 — next smallest",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/90",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-091",
+    "title": "HumanEval 091 — is bored",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/91",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-092",
+    "title": "HumanEval 092 — any int",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/92",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-093",
+    "title": "HumanEval 093 — encode",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/93",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-094",
+    "title": "HumanEval 094 — skjkasdkd",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/94",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-095",
+    "title": "HumanEval 095 — check dict case",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/95",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-096",
+    "title": "HumanEval 096 — count up to",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/96",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-097",
+    "title": "HumanEval 097 — multiply",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/97",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-098",
+    "title": "HumanEval 098 — count upper",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/98",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-099",
+    "title": "HumanEval 099 — closest integer",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/99",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-100",
+    "title": "HumanEval 100 — make a pile",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/100",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-101",
+    "title": "HumanEval 101 — words string",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/101",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-102",
+    "title": "HumanEval 102 — choose num",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/102",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-103",
+    "title": "HumanEval 103 — rounded avg",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/103",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-104",
+    "title": "HumanEval 104 — unique digits",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/104",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-105",
+    "title": "HumanEval 105 — by length",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/105",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-106",
+    "title": "HumanEval 106 — f",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/106",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-107",
+    "title": "HumanEval 107 — even odd palindrome",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/107",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-108",
+    "title": "HumanEval 108 — count nums",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/108",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-109",
+    "title": "HumanEval 109 — move one ball",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/109",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-110",
+    "title": "HumanEval 110 — exchange",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/110",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-111",
+    "title": "HumanEval 111 — histogram",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/111",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-112",
+    "title": "HumanEval 112 — reverse delete",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/112",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-113",
+    "title": "HumanEval 113 — odd count",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/113",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-114",
+    "title": "HumanEval 114 — minSubArraySum",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/114",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-115",
+    "title": "HumanEval 115 — max fill",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/115",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-116",
+    "title": "HumanEval 116 — sort array",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/116",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-117",
+    "title": "HumanEval 117 — select words",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/117",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-118",
+    "title": "HumanEval 118 — get closest vowel",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/118",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-119",
+    "title": "HumanEval 119 — match parens",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/119",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-120",
+    "title": "HumanEval 120 — maximum",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/120",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-121",
+    "title": "HumanEval 121 — solution",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/121",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-122",
+    "title": "HumanEval 122 — add elements",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/122",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-123",
+    "title": "HumanEval 123 — get odd collatz",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/123",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-124",
+    "title": "HumanEval 124 — valid date",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/124",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-125",
+    "title": "HumanEval 125 — split words",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/125",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-126",
+    "title": "HumanEval 126 — is sorted",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/126",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-127",
+    "title": "HumanEval 127 — intersection",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/127",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-128",
+    "title": "HumanEval 128 — prod signs",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/128",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-129",
+    "title": "HumanEval 129 — minPath",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/129",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-130",
+    "title": "HumanEval 130 — tri",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/130",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-131",
+    "title": "HumanEval 131 — digits",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/131",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-132",
+    "title": "HumanEval 132 — is nested",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/132",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-133",
+    "title": "HumanEval 133 — sum squares",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/133",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-134",
+    "title": "HumanEval 134 — check if last char is a letter",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/134",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-135",
+    "title": "HumanEval 135 — can arrange",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/135",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-136",
+    "title": "HumanEval 136 — largest smallest integers",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/136",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-137",
+    "title": "HumanEval 137 — compare one",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/137",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-138",
+    "title": "HumanEval 138 — is equal to sum even",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/138",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-139",
+    "title": "HumanEval 139 — special factorial",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/139",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-140",
+    "title": "HumanEval 140 — fix spaces",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/140",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-141",
+    "title": "HumanEval 141 — file name check",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/141",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-142",
+    "title": "HumanEval 142 — sum squares",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/142",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-143",
+    "title": "HumanEval 143 — words in sentence",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/143",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-144",
+    "title": "HumanEval 144 — simplify",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/144",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-145",
+    "title": "HumanEval 145 — order by points",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/145",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-146",
+    "title": "HumanEval 146 — specialFilter",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/146",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-147",
+    "title": "HumanEval 147 — get max triples",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/147",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-148",
+    "title": "HumanEval 148 — bf",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/148",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-149",
+    "title": "HumanEval 149 — sorted list sum",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/149",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-150",
+    "title": "HumanEval 150 — x or y",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/150",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-151",
+    "title": "HumanEval 151 — double the difference",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/151",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-152",
+    "title": "HumanEval 152 — compare",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/152",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-153",
+    "title": "HumanEval 153 — Strongest Extension",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/153",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-154",
+    "title": "HumanEval 154 — cycpattern check",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/154",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-155",
+    "title": "HumanEval 155 — even odd count",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/155",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-156",
+    "title": "HumanEval 156 — int to mini roman",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/156",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-157",
+    "title": "HumanEval 157 — right angle triangle",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/157",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-158",
+    "title": "HumanEval 158 — find max",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/158",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-159",
+    "title": "HumanEval 159 — eat",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/159",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-160",
+    "title": "HumanEval 160 — do algebra",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/160",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-161",
+    "title": "HumanEval 161 — solve",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/161",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-162",
+    "title": "HumanEval 162 — string to md5",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/162",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "humaneval-full-163",
+    "title": "HumanEval 163 — generate integers",
+    "benchmarkId": "humaneval",
+    "benchmark": "HumanEval",
+    "upstreamTaskId": "HumanEval/163",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "humaneval",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-001-adapter-only",
+    "title": "Reverse a string",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/adapter-seed-001",
+    "hostingMode": "adapter-only",
+    "tags": [
+      "python",
+      "unittest",
+      "string"
+    ]
+  },
+  {
+    "id": "mbpp-002-adapter-only",
+    "title": "Count vowels",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/adapter-seed-002",
+    "hostingMode": "adapter-only",
+    "tags": [
+      "python",
+      "unittest",
+      "string"
+    ]
+  },
+  {
+    "id": "mbpp-003-adapter-only",
+    "title": "Sum unique integers",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/adapter-seed-003",
+    "hostingMode": "adapter-only",
+    "tags": [
+      "python",
+      "unittest",
+      "set",
+      "list"
+    ]
+  },
+  {
+    "id": "mbpp-full-003",
+    "title": "MBPP 003 — Write a python function to identify non-prime numbers",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/3",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-004",
+    "title": "MBPP 004 — Write a function to find the n largest integers from a given list of numbers, returned in descending order",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/4",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-008",
+    "title": "MBPP 008 — Write a function to find squares of individual elements in a list",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/8",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-009",
+    "title": "MBPP 009 — Write a python function to find the minimum number of rotations (greater than 0) required to get the same string",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/9",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-011",
+    "title": "MBPP 011 — Write a python function to remove first and last occurrence of a given character from the string",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/11",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-012",
+    "title": "MBPP 012 — Write a function to sort a given matrix in ascending order according to the sum of its rows",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/12",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-014",
+    "title": "MBPP 014 — Write a python function to find the volume of a triangular prism",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/14",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-016",
+    "title": "MBPP 016 — Write a function to that returns true if the input string contains sequences of lowercase letters joined with an underscore and f",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/16",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-017",
+    "title": "MBPP 017 — Write a function that returns the perimeter of a square given its side length as input",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/17",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-019",
+    "title": "MBPP 019 — Write a function to find whether a given array of integers contains any duplicate element",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/19",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-020",
+    "title": "MBPP 020 — Write a function to check if the given number is woodball or not",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/20",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-057",
+    "title": "MBPP 057 — Write a python function to find the largest number that can be formed with the given list of digits",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/57",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-058",
+    "title": "MBPP 058 — Write a python function to check whether the given two integers have opposite sign or not",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/58",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-059",
+    "title": "MBPP 059 — Write a function to find the nth octagonal number",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/59",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-061",
+    "title": "MBPP 061 — Write a python function to count the number of substrings with the sum of digits equal to their length",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/61",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-062",
+    "title": "MBPP 062 — Write a python function to find smallest number in a list",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/62",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-063",
+    "title": "MBPP 063 — Write a function to find the maximum difference between available pairs in the given tuple list",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/63",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-064",
+    "title": "MBPP 064 — Write a function to sort a list of tuples using the second value of each tuple",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/64",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-065",
+    "title": "MBPP 065 — Write a function to flatten a list and sum all of its elements",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/65",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-066",
+    "title": "MBPP 066 — Write a python function to count the number of positive numbers in a list",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/66",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-067",
+    "title": "MBPP 067 — Write a function to find the number of ways to partition a set of Bell numbers",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/67",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-068",
+    "title": "MBPP 068 — Write a python function to check whether the given array is monotonic or not",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/68",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-069",
+    "title": "MBPP 069 — Write a function to check whether a list contains the given sublist or not",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/69",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-071",
+    "title": "MBPP 071 — Write a function to sort a list of elements",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/71",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-072",
+    "title": "MBPP 072 — Write a python function to check whether the given number can be represented as the difference of two squares or not",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/72",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-074",
+    "title": "MBPP 074 — Write a function to check whether it follows the sequence given in the patterns array",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/74",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-075",
+    "title": "MBPP 075 — Write a function to find tuples which have all elements divisible by k from the given list of tuples",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/75",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-077",
+    "title": "MBPP 077 — Write a python function to find whether a number is divisible by 11",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/77",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-079",
+    "title": "MBPP 079 — Write a python function to check whether the length of the word is odd or not",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/79",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-080",
+    "title": "MBPP 080 — Write a function to find the nth tetrahedral number",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/80",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-083",
+    "title": "MBPP 083 — Write a python function to find the character made by adding the ASCII value of all the characters of the given string modulo 26",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/83",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-084",
+    "title": "MBPP 084 — Write a function to find the nth number in the newman conway sequence",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/84",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-086",
+    "title": "MBPP 086 — Write a function to find nth centered hexagonal number",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/86",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-087",
+    "title": "MBPP 087 — Write a function to merge three dictionaries into a single dictionary",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/87",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-088",
+    "title": "MBPP 088 — Write a function to get the frequency of all the elements in a list, returned as a dictionary",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/88",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-089",
+    "title": "MBPP 089 — Write a function to find the closest smaller number than n",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/89",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-090",
+    "title": "MBPP 090 — Write a python function to find the length of the longest word",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/90",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-091",
+    "title": "MBPP 091 — Write a function to check if a string is present as a substring in a given list of string values",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/91",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-092",
+    "title": "MBPP 092 — Write a function to check whether the given number is undulating or not",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/92",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-093",
+    "title": "MBPP 093 — Write a function to calculate the value of 'a' to the power 'b'",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/93",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-094",
+    "title": "MBPP 094 — Given a list of tuples, write a function that returns the first value of the tuple with the smallest second value",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/94",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-095",
+    "title": "MBPP 095 — Write a python function to find the length of the smallest list in a list of lists",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/95",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-096",
+    "title": "MBPP 096 — Write a python function to find the number of divisors of a given integer",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/96",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-097",
+    "title": "MBPP 097 — Write a function to find frequency of each element in a flattened list of lists, returned in a dictionary",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/97",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-099",
+    "title": "MBPP 099 — Write a function to convert the given decimal number to its binary equivalent, represented as a string with no leading zeros",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/99",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-100",
+    "title": "MBPP 100 — Write a function to find the next smallest palindrome of a specified integer, returned as an integer",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/100",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-101",
+    "title": "MBPP 101 — Write a function to find the kth element in the given array using 1-based indexing",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/101",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-102",
+    "title": "MBPP 102 — Write a function to convert a snake case string to camel case string",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/102",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-103",
+    "title": "MBPP 103 — Write a function to find the Eulerian number a(n, m)",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/103",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "mbpp-full-104",
+    "title": "MBPP 104 — Write a function to sort each sublist of strings in a given list of lists",
+    "benchmarkId": "mbpp",
+    "benchmark": "Mostly Basic Python Problems",
+    "upstreamTaskId": "MBPP/104",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "mbpp",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "quixbugs-python-bitcount",
+    "title": "QuixBugs Python — bitcount",
+    "benchmarkId": "quixbugs",
+    "benchmark": "QuixBugs",
+    "upstreamTaskId": "bitcount",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "quixbugs",
+      "bug-fix",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "quixbugs-python-breadth-first-search",
+    "title": "QuixBugs Python — breadth_first_search",
+    "benchmarkId": "quixbugs",
+    "benchmark": "QuixBugs",
+    "upstreamTaskId": "breadth_first_search",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "quixbugs",
+      "bug-fix",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "quixbugs-python-bucketsort",
+    "title": "QuixBugs Python — bucketsort",
+    "benchmarkId": "quixbugs",
+    "benchmark": "QuixBugs",
+    "upstreamTaskId": "bucketsort",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "quixbugs",
+      "bug-fix",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "quixbugs-python-depth-first-search",
+    "title": "QuixBugs Python — depth_first_search",
+    "benchmarkId": "quixbugs",
+    "benchmark": "QuixBugs",
+    "upstreamTaskId": "depth_first_search",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "quixbugs",
+      "bug-fix",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "quixbugs-python-detect-cycle",
+    "title": "QuixBugs Python — detect_cycle",
+    "benchmarkId": "quixbugs",
+    "benchmark": "QuixBugs",
+    "upstreamTaskId": "detect_cycle",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "quixbugs",
+      "bug-fix",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "quixbugs-python-find-first-in-sorted",
+    "title": "QuixBugs Python — find_first_in_sorted",
+    "benchmarkId": "quixbugs",
+    "benchmark": "QuixBugs",
+    "upstreamTaskId": "find_first_in_sorted",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "quixbugs",
+      "bug-fix",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "quixbugs-python-find-in-sorted",
+    "title": "QuixBugs Python — find_in_sorted",
+    "benchmarkId": "quixbugs",
+    "benchmark": "QuixBugs",
+    "upstreamTaskId": "find_in_sorted",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "quixbugs",
+      "bug-fix",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "quixbugs-python-flatten",
+    "title": "QuixBugs Python — flatten",
+    "benchmarkId": "quixbugs",
+    "benchmark": "QuixBugs",
+    "upstreamTaskId": "flatten",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "quixbugs",
+      "bug-fix",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "quixbugs-python-gcd",
+    "title": "QuixBugs Python — gcd",
+    "benchmarkId": "quixbugs",
+    "benchmark": "QuixBugs",
+    "upstreamTaskId": "gcd",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "quixbugs",
+      "bug-fix",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "quixbugs-python-get-factors",
+    "title": "QuixBugs Python — get_factors",
+    "benchmarkId": "quixbugs",
+    "benchmark": "QuixBugs",
+    "upstreamTaskId": "get_factors",
+    "hostingMode": "hosted",
+    "tags": [
+      "python",
+      "quixbugs",
+      "bug-fix",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "swe-bench-lite-astropy-12907",
+    "title": "SWE-bench Lite — astropy__astropy-12907",
+    "benchmarkId": "swe-bench-lite",
+    "benchmark": "SWE-bench Lite",
+    "upstreamTaskId": "astropy__astropy-12907",
+    "hostingMode": "adapter-only",
+    "tags": [
+      "python",
+      "swe-bench",
+      "lite",
+      "repo-patch",
+      "scored-hidden"
+    ]
+  },
+  {
+    "id": "swe-bench-verified-astropy-12907",
+    "title": "SWE-bench Verified — astropy__astropy-12907",
+    "benchmarkId": "swe-bench-verified",
+    "benchmark": "SWE-bench Verified",
+    "upstreamTaskId": "astropy__astropy-12907",
+    "hostingMode": "adapter-only",
+    "tags": [
+      "python",
+      "swe-bench",
+      "verified",
+      "repo-patch",
+      "scored-hidden"
+    ]
   }
 ]

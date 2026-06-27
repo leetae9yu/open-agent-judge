@@ -81,7 +81,6 @@ function canCreateScoredRecording(problem: Problem, verification: VerificationRu
     problem.scoringMode === "scored-hidden" &&
     problem.oracleMetadata?.hiddenRequired === true &&
     problem.oracleMetadata.oracleDescriptorHash === verification.job.oracleDescriptorHash &&
-    problem.oracleMetadata.originalEvidenceId !== problem.oracleMetadata.rerunEvidenceId &&
     verification.job.scoringStatus === "scored" &&
     verification.job.sandboxMode === "docker"
   );

@@ -102,7 +102,7 @@ describe("GitHub Actions PR judge trust boundaries", () => {
       "tests/**",
     ].sort());
     assert.match(judge, /concurrency:\n  group: agentoj-pr-judge-\$\{\{ github\.event\.pull_request\.number \|\| inputs\.pr_head_sha \}\}\n  cancel-in-progress: true/);
-    assert.match(judge, /timeout-minutes: 10/);
+    assert.match(judge, /timeout-minutes: 45/);
     assert.match(judge, /persist-credentials: false/);
     assert.match(judge, /docker version/);
     assert.match(judge, /judge-pr-submission/);
@@ -113,6 +113,25 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.match(judge, /AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON/);
     assert.match(judge, /"cases":\[\{"id":"private-smoke-case","args":\[\[1\]\],"expected":1\}\]/);
     assert.match(judge, /secrets\.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON/);
+    assert.doesNotMatch(judge, /AGENTOJ_QUIXBUGS_PRIVATE_DESCRIPTOR_BUNDLE_JSON/);
+    assert.doesNotMatch(judge, /--test-name-pattern "validates QuixBugs private descriptor bundles"/);
+    assert.match(judge, /swebench_instance_id/);
+    assert.match(judge, /swebench_instance_id:\n        description: 'Allowlisted SWE-bench instance id for maintainer-triggered runs'\n        required: true/);
+    assert.match(judge, /Validate SWE-bench private descriptor for submitted problem/);
+    assert.match(judge, /Materialize private descriptor secret to path/);
+    assert.match(judge, /AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH=\$descriptor_path/);
+    assert.match(judge, /readFileSync\(process\.env\.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH/);
+    assert.match(judge, /selectCanonicalPrivateOracleDescriptor/);
+    assert.match(judge, /private descriptor does not match submitted problem/);
+    assert.match(judge, /expectedOracleDescriptorHash: entry\.problem\.oracleMetadata\?\.oracleDescriptorHash/);
+    assert.match(judge, /Install pinned SWE-bench harness/);
+    assert.match(judge, /git checkout f7bbbb2ccdf479001d6467c9e34af59e44a840f9/);
+    assert.match(judge, /python3 -m pip install --user -e \./);
+    assert.match(judge, /docker pull swebench\/sweb\.eval\.x86_64\.astropy_1776_astropy-12907@sha256:f3f63bb87d581c0e7b47f900dd82165b71040e1758d3c29e915e2b18da9baf63/);
+    assert.match(judge, /AGENTOJ_SWEBENCH_HARNESS_PATH: \$\{\{ github\.event_name == 'workflow_dispatch' && '\/tmp\/swe-bench' \|\| '' \}\}/);
+    assert.match(judge, /--trigger \$\{\{ github\.event_name \}\}/);
+    assert.match(judge, /--instance-id \$\{\{ inputs\.swebench_instance_id \|\| '' \}\}/);
+    assert.doesNotMatch(judge, /AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON: \$\{\{ github\.event_name == 'workflow_dispatch' && secrets\.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON \|\| '' \}\}/);
     assert.match(judge, /--expected-pr-head-sha \$\{\{ github\.event\.pull_request\.head\.sha \|\| inputs\.pr_head_sha \}\}/);
     assert.match(judge, /agentoj-pr-judge-summary/);
     assert.doesNotMatch(judge, /deploy-pages|createComment|issues\.createComment/);
@@ -151,6 +170,10 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.equal(permissions.get("id-token"), "write");
     assert.doesNotMatch(report, /\.agentoj\/submission\.patch|\.agentoj\/submission\.json/);
     assert.match(report, /artifact\.name === 'agentoj-pr-judge-summary'/);
+    assert.match(report, /getWorkflowRun/);
+    assert.match(report, /run\.data\.name !== 'AgentOJ PR Judge'/);
+    assert.match(report, /run\.data\.conclusion !== 'success'/);
+    assert.match(report, /summaries\.length !== 1/);
     assert.match(report, /summary\.size_in_bytes > 64 \* 1024/);
     assert.match(report, /validateSanitizedPrJudgeSummary/);
     assert.match(report, /escapeMarkdown/);
@@ -159,6 +182,8 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.match(report, /actions\/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e/);
     assert.match(report, /Publish passed result to static leaderboard/);
     assert.match(report, /web\/data\/leaderboard\.json/);
+    assert.match(report, /steps\.download_summary\.outputs\.judge_conclusion == 'success'/);
+    assert.doesNotMatch(report, /github\.event\.workflow_run\.conclusion == 'success' \|\| inputs\.run_id/);
     assert.match(report, /summary\.status !== 'passed'/);
     assertPinnedActions(report);
 

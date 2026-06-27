@@ -32,6 +32,8 @@ import {
   validateImplementedAdapterSeeds,
   validatePrSubmissionEnvelope,
   validateSanitizedPrJudgeSummary,
+  validateBenchmarkExecutionRequest,
+  selectCanonicalPrivateOracleDescriptor,
   type PrSubmissionEnvelope,
   type ParsedFilePatch,
   type SanitizedPrJudgeSummary,
@@ -62,16 +64,22 @@ export interface CliRunResult {
     id: string;
     title: string;
     benchmarkId: string;
+    adapterId: string;
     hostingMode: string;
     tags: readonly string[];
+    scoringMode?: string;
+    oracleDescriptorHash?: string;
   }>;
   problem?: {
     id: string;
     title: string;
     benchmarkId: string;
+    adapterId: string;
     upstreamTaskId: string;
     hostingMode: string;
     tags: readonly string[];
+    scoringMode?: string;
+    oracleDescriptorHash?: string;
   };
   registry?: Array<{
     benchmarkId: string;
@@ -227,7 +235,7 @@ function createJudgeSummary(input: {
 function validateAndWriteJudgeSummary(
   path: string,
   summary: SanitizedPrJudgeSummary,
-  options: { enabledProblemIds?: readonly string[]; enabledAdapterIds?: readonly string[] },
+  options: { enabledProblemIds?: readonly string[]; enabledAdapterIds?: readonly string[]; benchmarkId?: string },
 ): SanitizedPrJudgeSummary {
   const validation = validateSanitizedPrJudgeSummary(summary, options);
   const writableSummary =
@@ -252,21 +260,21 @@ function problemSummary(problem: ReturnType<typeof listImplementedProblems>[numb
     id: problem.id,
     title: problem.title,
     benchmarkId: problem.benchmarkId,
+    adapterId: problem.adapterId,
     hostingMode: problem.hostingMode,
     tags: problem.languageFrameworkTags,
+    ...(problem.scoringMode ? { scoringMode: problem.scoringMode } : {}),
+    ...(problem.oracleMetadata?.oracleDescriptorHash ? { oracleDescriptorHash: problem.oracleMetadata.oracleDescriptorHash } : {}),
   };
 }
 
-function hasValidScoredOracleMetadata(problem: { scoringMode?: string; oracleMetadata?: { hiddenRequired: true; oracleDescriptorHash: string; originalEvidenceId: string; rerunEvidenceId: string } }): boolean {
+function hasValidScoredOracleMetadata(problem: { scoringMode?: string; oracleMetadata?: { hiddenRequired: true; oracleDescriptorHash: string } }): boolean {
   const oracle = problem.oracleMetadata;
   return (
     problem.scoringMode === "scored-hidden" &&
-    !!oracle &&
+    oracle !== undefined &&
     oracle.hiddenRequired === true &&
-    /^sha256:[0-9a-f]{64}$/i.test(oracle.oracleDescriptorHash) &&
-    oracle.originalEvidenceId.length > 0 &&
-    oracle.rerunEvidenceId.length > 0 &&
-    oracle.originalEvidenceId !== oracle.rerunEvidenceId
+    /^sha256:[0-9a-f]{64}$/i.test(oracle.oracleDescriptorHash)
   );
 }
 function privateOracleDescriptorJson(): string | null {
@@ -277,14 +285,7 @@ function privateOracleDescriptorJson(): string | null {
   return null;
 }
 
-function canonicalProblemDescriptor(problemId: string, value: unknown): string | null {
-  const descriptor = value as { problemId?: unknown; cases?: unknown };
-  if (descriptor?.problemId !== undefined && descriptor.problemId !== problemId) return null;
-  if (!Array.isArray(descriptor?.cases) || descriptor.cases.length === 0) return null;
-  return JSON.stringify({ problemId, cases: descriptor.cases });
-}
-
-function privateOracleDescriptorFor(problemId: string): string | null {
+function privateOracleDescriptorFor(problem: ReturnType<typeof listImplementedProblems>[number]) {
   const raw = privateOracleDescriptorJson();
   if (!raw) return null;
   let parsed: unknown;
@@ -294,27 +295,25 @@ function privateOracleDescriptorFor(problemId: string): string | null {
     return null;
   }
 
-  const direct = canonicalProblemDescriptor(problemId, parsed);
-  if (direct) return direct;
-
-  const bundle = parsed as { descriptors?: unknown; problems?: unknown };
-  if (Array.isArray(bundle.descriptors)) {
-    for (const entry of bundle.descriptors) {
-      const selected = canonicalProblemDescriptor(problemId, entry);
-      if (selected) return selected;
-    }
-  }
-  if (bundle.problems && typeof bundle.problems === "object" && !Array.isArray(bundle.problems)) {
-    const selected = (bundle.problems as Record<string, unknown>)[problemId];
-    if (selected !== undefined) return canonicalProblemDescriptor(problemId, selected);
-  }
-  return null;
+  return selectCanonicalPrivateOracleDescriptor(
+    {
+      problemId: problem.id,
+      benchmarkId: problem.benchmarkId,
+      adapterId: problem.adapterId,
+      upstreamTaskId: problem.upstreamTaskId,
+      expectedOracleDescriptorHash: problem.oracleMetadata?.oracleDescriptorHash,
+    },
+    parsed,
+  );
 }
 
 function withRuntimePrivateOracle(problem: ReturnType<typeof listImplementedProblems>[number]) {
-  if (hasValidScoredOracleMetadata(problem)) return problem;
-  const descriptor = privateOracleDescriptorFor(problem.id);
-  if (!descriptor) return problem;
+  const selected = privateOracleDescriptorFor(problem);
+  if (hasValidScoredOracleMetadata(problem)) {
+    return selected ? problem : { ...problem, scoringMode: "demo-public" as const, oracleMetadata: undefined };
+  }
+  if (!selected) return problem;
+  const descriptor = selected.canonicalJson;
   return {
     ...problem,
     scoringMode: "scored-hidden" as const,
@@ -322,8 +321,6 @@ function withRuntimePrivateOracle(problem: ReturnType<typeof listImplementedProb
       kind: "generated-private" as const,
       hiddenRequired: true as const,
       oracleDescriptorHash: `sha256:${createHash("sha256").update(descriptor).digest("hex")}`,
-      originalEvidenceId: `${problem.id}-private-original`,
-      rerunEvidenceId: `${problem.id}-private-rerun`,
     },
   };
 }
@@ -475,9 +472,11 @@ export function runCli(args = process.argv.slice(2)): CliRunResult {
         ? (envelopeInput as Partial<PrSubmissionEnvelope>)
         : {};
     const envelope = envelopeRecord as PrSubmissionEnvelope;
+    const preliminaryCatalogEntry = getImplementedProblemCatalog(envelope.problemId ?? "");
     const validation = validatePrSubmissionEnvelope(envelopeInput, {
       ...judgeOptions,
       requirePrHeadSha: expectedPrHeadSha ? false : true,
+      benchmarkId: preliminaryCatalogEntry?.benchmark.id,
     });
     const issueCodes = [...validation.issues.map((entry) => entry.code), ...patchIssueCodes];
     if (expectedPrHeadShaRaw && !expectedPrHeadSha) issueCodes.push("prSubmission.prHeadSha.expectedInvalid");
@@ -498,7 +497,7 @@ export function runCli(args = process.argv.slice(2)): CliRunResult {
       issueCodes.push("prSubmission.patchStats.mismatch");
     }
 
-    const catalogEntry = getImplementedProblemCatalog(envelope.problemId ?? "");
+    const catalogEntry = preliminaryCatalogEntry;
     if (!catalogEntry) issueCodes.push("prSubmission.problem.unsupported");
     if (catalogEntry && envelope.adapterId !== catalogEntry.adapter.id) issueCodes.push("prSubmission.adapter.mismatch");
     if (catalogEntry && patchIssueCodes.length === 0) {
@@ -513,6 +512,9 @@ export function runCli(args = process.argv.slice(2)): CliRunResult {
       }
     }
     const sandboxFlag = optionalFlag(args, "--sandbox");
+    const triggerFlag = optionalFlag(args, "--trigger");
+    const executionTrigger = triggerFlag === "workflow_dispatch" || process.env.GITHUB_EVENT_NAME === "workflow_dispatch" ? "workflow_dispatch" : "pull_request";
+    const requestedInstanceId = optionalFlag(args, "--instance-id") ?? process.env.AGENTOJ_SWEBENCH_INSTANCE_ID;
     if (sandboxFlag !== undefined && sandboxFlag !== "docker") issueCodes.push("prSubmission.sandbox.dockerRequired");
 
     if (issueCodes.length > 0 || !catalogEntry) {
@@ -567,6 +569,53 @@ export function runCli(args = process.argv.slice(2)): CliRunResult {
           issues: ["problem.scoringMode.scoredHiddenRequired"],
         };
       }
+      const selectedPrivateDescriptor = privateOracleDescriptorFor(problem);
+      let selectedPrivateOracle: Record<string, unknown> | null = null;
+      if (selectedPrivateDescriptor) {
+        try {
+          selectedPrivateOracle = JSON.parse(selectedPrivateDescriptor.canonicalJson) as Record<string, unknown>;
+        } catch {
+          selectedPrivateOracle = null;
+        }
+      }
+      const selectedSwebenchInstanceId = typeof selectedPrivateOracle?.instanceId === "string" ? selectedPrivateOracle.instanceId : undefined;
+      const isSwebenchBenchmark = benchmark.id === "swe-bench-lite" || benchmark.id === "swe-bench-verified";
+      const swebenchInstanceId = isSwebenchBenchmark ? requestedInstanceId : selectedSwebenchInstanceId;
+      const allowedSwebenchInstanceIds = isSwebenchBenchmark ? [problem.upstreamTaskId] : selectedSwebenchInstanceId ? [selectedSwebenchInstanceId] : undefined;
+      const swebenchHarnessCommit =
+        typeof selectedPrivateOracle?.harnessCommit === "string" ? selectedPrivateOracle.harnessCommit : undefined;
+      const swebenchDatasetRevision =
+        typeof selectedPrivateOracle?.datasetRevision === "string" ? selectedPrivateOracle.datasetRevision : undefined;
+      const swebenchHarnessImageDigest =
+        typeof selectedPrivateOracle?.harnessImageDigest === "string" ? selectedPrivateOracle.harnessImageDigest : undefined;
+      const swebenchCacheKey =
+        typeof selectedPrivateOracle?.cacheKey === "string" ? selectedPrivateOracle.cacheKey : undefined;
+      const swebenchDescriptorIssues =
+        isSwebenchBenchmark && selectedSwebenchInstanceId && selectedSwebenchInstanceId !== requestedInstanceId
+          ? [
+              {
+                code: "benchmarkPolicy.instance.descriptorMismatch",
+                message: "SWE-bench workflow instance id must match the selected private descriptor instance.",
+              },
+            ]
+          : [];
+      const executionPolicy = validateBenchmarkExecutionRequest({
+        benchmarkId: benchmark.id,
+        resources: adapter.defaultResources,
+        trigger: executionTrigger,
+        prHeadSha: summaryPrHeadSha,
+        instanceId: swebenchInstanceId,
+        allowedInstanceIds: allowedSwebenchInstanceIds,
+        maxWorkers: 1,
+        artifactRetentionDays: 7,
+        harnessCommit: swebenchHarnessCommit,
+        datasetRevision: swebenchDatasetRevision,
+        harnessImageDigest: swebenchHarnessImageDigest,
+        cacheKey: swebenchCacheKey,
+      });
+      if (!executionPolicy.ok || swebenchDescriptorIssues.length > 0) {
+        throw new ContractViolation("benchmark execution policy rejected the run", [...executionPolicy.issues, ...swebenchDescriptorIssues]);
+      }
       const submission = createPatchSubmission(problem, envelope.id);
       const sandboxMode = "docker";
       const verification = runPatchVerification(
@@ -579,14 +628,19 @@ export function runCli(args = process.argv.slice(2)): CliRunResult {
         },
         sandboxMode,
       );
+      const hiddenScored =
+        verification.job.scoringStatus === "scored" &&
+        verification.job.oracleDescriptorHash === problem.oracleMetadata?.oracleDescriptorHash;
       const status: SanitizedPrJudgeSummary["status"] =
-        verification.job.status === "passed"
+        verification.job.status === "passed" && hiddenScored
           ? "passed"
           : verification.job.status === "infra-error"
             ? "infra-error"
             : verification.job.status === "timed-out"
               ? "timed-out"
-              : "failed";
+              : hiddenScored
+                ? "failed"
+                : "invalid";
       const summary = createJudgeSummary({
         submissionId: envelope.id,
         problemId: problem.id,
@@ -596,23 +650,24 @@ export function runCli(args = process.argv.slice(2)): CliRunResult {
         patchStats,
         messages: [
           `judge.status.${status}: Judge completed with sanitized public metrics.`,
+          hiddenScored ? "oracle.scored: Hidden oracle descriptor hash matched catalog metadata." : "oracle.scoredHiddenRequired: Scored-hidden judging requires matching private oracle execution.",
           `patch.apply.${verification.result.patchApplyStatus}: Patch apply status recorded without raw logs.`,
         ],
         resultSeed: `${summaryPrHeadSha}:${actualPatchSha256}:${verification.job.id}:${verification.result.resultHash}:${status}`,
       });
-      const writtenSummary = validateAndWriteJudgeSummary(summaryOut, summary, judgeOptions);
+      const writtenSummary = validateAndWriteJudgeSummary(summaryOut, summary, { ...judgeOptions, benchmarkId: benchmark.id });
       return {
-        ok: status === "passed",
+        ok: status === "passed" && hiddenScored,
         problemId: problem.id,
         patchBytes: actualPatchBytes,
         runnerStatus: status,
         runnerResultHash: writtenSummary.resultHash,
         sandboxMode: verification.sandboxMode,
-        oracleMode: "hidden-oracle-scored",
+        oracleMode: hiddenScored ? "hidden-oracle-scored" : "public-fixture-demo",
         summaryPath: summaryOut,
         judgeSummary: writtenSummary,
-        error: status === "passed" ? undefined : "PR judge did not pass.",
-        issues: undefined,
+        error: status === "passed" ? undefined : "PR judge did not pass with scored hidden-oracle evidence.",
+        issues: hiddenScored ? undefined : ["problem.scoringMode.scoredHiddenRequired"],
       };
     } catch (error) {
       const summary = createJudgeSummary({
@@ -628,7 +683,7 @@ export function runCli(args = process.argv.slice(2)): CliRunResult {
             : ["judge.infraError: Judge failed before sanitized judging completed."],
         resultSeed: `infra-error:${summaryPrHeadSha}:${actualPatchSha256}:${error instanceof Error ? error.name : "unknown"}`,
       });
-      const writtenSummary = validateAndWriteJudgeSummary(summaryOut, summary, judgeOptions);
+      const writtenSummary = validateAndWriteJudgeSummary(summaryOut, summary, { ...judgeOptions, benchmarkId: catalogEntry.benchmark.id });
       return {
         ok: false,
         problemId: writtenSummary.problemId,
@@ -714,7 +769,7 @@ export function runCli(args = process.argv.slice(2)): CliRunResult {
         runnerStatus: verification.job.status,
         runnerResultHash: verification.result.resultHash,
         sandboxMode: verification.sandboxMode,
-        oracleMode: "public-fixture-demo",
+        oracleMode: verification.job.scoringStatus === "scored" ? "hidden-oracle-scored" : "public-fixture-demo",
         error: failed.error,
       };
     }
@@ -728,15 +783,17 @@ export function runCli(args = process.argv.slice(2)): CliRunResult {
     const recording = createSolutionRecording(catalog, submission, verification);
 
     if (!hasValidScoredOracleMetadata(problem) || verification.job.scoringStatus !== "scored" || verification.job.sandboxMode !== "docker") {
+      const demoOnly = !hasValidScoredOracleMetadata(problem);
       return {
-        ok: true,
+        ok: demoOnly,
         problemId,
         patchBytes: Buffer.byteLength(patch),
-        recordingId: recording.id,
+        recordingId: demoOnly ? recording.id : undefined,
         runnerStatus: verification.job.status,
         runnerResultHash: verification.result.resultHash,
         sandboxMode: verification.sandboxMode,
         oracleMode: "public-fixture-demo",
+        error: demoOnly ? undefined : "Scored-hidden problems require Docker hidden-oracle scoring.",
       };
     }
 

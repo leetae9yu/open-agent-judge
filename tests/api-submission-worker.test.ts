@@ -135,6 +135,52 @@ describe("AgentOJ submission and worker lifecycle", () => {
       db.close();
     }
   });
+
+  it("fails closed when API worker runs a scored-hidden problem without matched private oracle evidence", async () => {
+    const dbPath = tempDb();
+    const { baseUrl } = await withServer(dbPath);
+    const patch = [
+      "diff --git a/solution.py b/solution.py",
+      "--- a/solution.py",
+      "+++ b/solution.py",
+      "@@ -0,0 +1,6 @@",
+      "+def has_close_elements(numbers, threshold):",
+      "+    for i, left in enumerate(numbers):",
+      "+        for right in numbers[i + 1:]:",
+      "+            if abs(left - right) < threshold:",
+      "+                return True",
+      "+    return False",
+      "",
+    ].join("\n");
+
+    await postJson(baseUrl, "/api/submissions", { problemId: "humaneval-full-000", patch });
+    const run = (await (await postJson(baseUrl, "/api/worker/run-next", {}, true)).json()) as {
+      result: { status: string; failedAttemptId?: string; recordingPromoted: boolean };
+    };
+    assert.equal(run.result.status, "failed");
+    assert.ok(run.result.failedAttemptId);
+    assert.equal(run.result.recordingPromoted, false);
+
+    const db = openAgentOjDatabase(dbPath);
+    try {
+      const job = db.prepare("SELECT status, scoring_status, sandbox_mode, oracle_descriptor_hash FROM runner_jobs").get() as {
+        status: string;
+        scoring_status: string;
+        sandbox_mode: string;
+        oracle_descriptor_hash: string | null;
+      };
+      assert.equal(job.status, "failed");
+      assert.equal(job.scoring_status, "demo");
+      assert.equal(job.sandbox_mode, "local");
+      assert.equal(job.oracle_descriptor_hash, null);
+      const failedAttempt = db.prepare("SELECT error FROM failed_run_attempts").get() as { error: string };
+      assert.equal(failedAttempt.error, "scored-hidden submissions require matching private oracle execution");
+      assert.equal((db.prepare("SELECT COUNT(*) AS count FROM solution_recordings").get() as { count: number }).count, 0);
+      assert.equal((db.prepare("SELECT COUNT(*) AS count FROM public_memory_entries").get() as { count: number }).count, 0);
+    } finally {
+      db.close();
+    }
+  });
   it("rejects invalid sandbox mode and marks unavailable docker as infra-error", async () => {
     const dbPath = tempDb();
     const { baseUrl } = await withServer(dbPath);

@@ -40,6 +40,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Download sanitized summary artifact
+        id: download_summary
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
         env:
           RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
@@ -48,9 +49,15 @@ jobs:
             const fs = require('node:fs');
             const run_id = Number(process.env.RUN_ID);
             const { owner, repo } = context.repo;
+            const run = await github.rest.actions.getWorkflowRun({ owner, repo, run_id });
+            if (run.data.name !== 'AgentOJ PR Judge') throw new Error('summary run is not AgentOJ PR Judge');
+            if (run.data.conclusion !== 'success') throw new Error(`summary run did not succeed: ${run.data.conclusion}`);
+            core.setOutput('judge_conclusion', run.data.conclusion);
+            core.setOutput('judge_event', run.data.event);
             const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, { owner, repo, run_id });
-            const summary = artifacts.find((artifact) => artifact.name === 'agentoj-pr-judge-summary');
-            if (!summary) throw new Error('sanitized summary artifact not found');
+            const summaries = artifacts.filter((artifact) => artifact.name === 'agentoj-pr-judge-summary');
+            if (summaries.length !== 1) throw new Error(`expected exactly one sanitized summary artifact, found ${summaries.length}`);
+            const summary = summaries[0];
             if (summary.size_in_bytes > 64 * 1024) throw new Error('sanitized summary artifact is oversized');
             const download = await github.rest.actions.downloadArtifact({ owner, repo, artifact_id: summary.id, archive_format: 'zip' });
             fs.mkdirSync('artifacts/report', { recursive: true });
@@ -63,9 +70,11 @@ jobs:
           import { readFileSync } from 'node:fs';
           import { getImplementedProblemCatalog, listImplementedProblems, validateSanitizedPrJudgeSummary } from './src/index.ts';
           const summary = JSON.parse(readFileSync('artifacts/report/pr-judge-summary.json', 'utf8'));
+          const catalog = getImplementedProblemCatalog(summary.problemId);
           const options = {
             enabledProblemIds: listImplementedProblems().map((problem) => problem.id),
             enabledAdapterIds: listImplementedProblems().map((problem) => getImplementedProblemCatalog(problem.id)?.adapter.id).filter(Boolean),
+            benchmarkId: catalog?.benchmark.id,
           };
           const validation = validateSanitizedPrJudgeSummary(summary, options);
           if (!validation.ok) throw new Error(validation.issues.map((issue) => issue.code).join(', '));
@@ -74,7 +83,7 @@ jobs:
           NODE
 
       - name: Publish passed result to static leaderboard
-        if: ${{ github.event.workflow_run.conclusion == 'success' || inputs.run_id }}
+        if: ${{ steps.download_summary.outputs.judge_conclusion == 'success' }}
         id: publish_leaderboard
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
         with:

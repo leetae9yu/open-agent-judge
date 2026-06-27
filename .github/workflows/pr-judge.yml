@@ -18,6 +18,10 @@ on:
         description: 'Trusted PR head SHA for maintainer-triggered secret-backed reruns'
         required: true
         type: string
+      swebench_instance_id:
+        description: 'Allowlisted SWE-bench instance id for maintainer-triggered runs'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -30,7 +34,7 @@ jobs:
   judge:
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 45
     steps:
       - name: Checkout trusted judge code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
@@ -66,9 +70,57 @@ jobs:
             --patch .github/agentoj-smoke/humaneval-001-pass.diff \
             --sandbox docker
 
-      - name: Judge sanitized PR submission with trusted code
+      - name: Install pinned SWE-bench harness
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          git clone --filter=blob:none https://github.com/SWE-bench/SWE-bench.git /tmp/swe-bench
+          cd /tmp/swe-bench
+          git checkout f7bbbb2ccdf479001d6467c9e34af59e44a840f9
+          test "$(git rev-parse HEAD)" = "f7bbbb2ccdf479001d6467c9e34af59e44a840f9"
+          python3 -m pip install --user -e .
+
+      - name: Pull pinned SWE-bench harness image
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          docker pull swebench/sweb.eval.x86_64.astropy_1776_astropy-12907@sha256:f3f63bb87d581c0e7b47f900dd82165b71040e1758d3c29e915e2b18da9baf63
+          docker image inspect swebench/sweb.eval.x86_64.astropy_1776_astropy-12907@sha256:f3f63bb87d581c0e7b47f900dd82165b71040e1758d3c29e915e2b18da9baf63
+
+      - name: Materialize private descriptor secret to path
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
           AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON: ${{ secrets.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON }}
+        run: |
+          test -n "$AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON"
+          descriptor_dir="$RUNNER_TEMP/agentoj-private-descriptor"
+          install -d -m 700 "$descriptor_dir"
+          descriptor_path="$descriptor_dir/descriptor.json"
+          umask 077
+          printf '%s' "$AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON" > "$descriptor_path"
+          test -s "$descriptor_path"
+          echo "AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH=$descriptor_path" >> "$GITHUB_ENV"
+      - name: Validate SWE-bench private descriptor for submitted problem
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          test -n "$AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH"
+          node --experimental-strip-types --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import { getImplementedProblemCatalog, selectCanonicalPrivateOracleDescriptor } from './src/index.ts';
+          const submission = JSON.parse(readFileSync('pr-submission/.agentoj/submission.json', 'utf8'));
+          const entry = getImplementedProblemCatalog(submission.problemId);
+          if (!entry) throw new Error('unknown submitted problem id');
+          const descriptor = JSON.parse(readFileSync(process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_PATH ?? '', 'utf8'));
+          const selected = selectCanonicalPrivateOracleDescriptor({
+            problemId: entry.problem.id,
+            benchmarkId: entry.benchmark.id,
+            adapterId: entry.adapter.id,
+            upstreamTaskId: entry.problem.upstreamTaskId,
+            expectedOracleDescriptorHash: entry.problem.oracleMetadata?.oracleDescriptorHash
+          }, descriptor);
+          if (!selected) throw new Error('private descriptor does not match submitted problem');
+          NODE
+      - name: Judge sanitized PR submission with trusted code
+        env:
+          AGENTOJ_SWEBENCH_HARNESS_PATH: ${{ github.event_name == 'workflow_dispatch' && '/tmp/swe-bench' || '' }}
         run: |
           mkdir -p artifacts
           test -f pr-submission/.agentoj/submission.json
@@ -78,6 +130,8 @@ jobs:
             --patch pr-submission/.agentoj/submission.patch \
             --summary-out artifacts/pr-judge-summary.json \
             --expected-pr-head-sha ${{ github.event.pull_request.head.sha || inputs.pr_head_sha }} \
+            --instance-id ${{ inputs.swebench_instance_id || '' }} \
+            --trigger ${{ github.event_name }} \
             --sandbox docker
 
       - name: Upload sanitized judge summary only

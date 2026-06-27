@@ -1,25 +1,26 @@
 import type { Adapter, Benchmark, Problem } from "../contracts/types.ts";
 import { validateAdapter, validateBenchmark, validateProblem } from "../contracts/validators.ts";
+import { mbppSubsetScoredProblems, MBPP_SUBSET_ORACLE_MANIFEST, MBPP_SUBSET_SELECTION_EXCLUSIONS, MBPP_SUBSET_DESCRIPTOR_REVISION, MBPP_UPSTREAM_COMMIT, MBPP_UPSTREAM_DATA_SHA256, MBPP_UPSTREAM_DATA_URL } from "./mbpp-subset.ts";
 
 export const MBPP_BENCHMARK: Benchmark = {
   id: "mbpp",
   name: "Mostly Basic Python Problems",
   upstreamUrl: "https://github.com/google-research/google-research/tree/master/mbpp",
-  upstreamCommitOrVersion: "adapter-seed-synthetic-2026-06-24",
+  upstreamCommitOrVersion: MBPP_UPSTREAM_COMMIT,
   licenseId: "Apache-2.0",
   legalStatus: "approved",
   redistributionRights: "clear",
-  defaultHostingMode: "adapter-only",
+  defaultHostingMode: "hosted",
 };
 
 export const MBPP_ADAPTER: Adapter = {
   id: "mbpp-python",
   benchmarkId: MBPP_BENCHMARK.id,
-  adapterVersion: "0.1.0",
+  adapterVersion: "0.2.0",
   fetchStrategy: "upstream-checkout",
   judgeCommand: ["python3", "-m", "unittest", "discover", "-s", "tests"],
   verificationCommands: [["python3", "-m", "unittest", "discover", "-s", "tests"]],
-  supportedHostingModes: ["adapter-only"],
+  supportedHostingModes: ["adapter-only", "hosted"],
   dockerImageDigest: "python:3.12.11-slim-bookworm@sha256:519591d6871b7bc437060736b9f7456b8731f1499a57e22e6c285135ae657bf7",
   defaultResources: {
     timeoutSeconds: 60,
@@ -29,7 +30,7 @@ export const MBPP_ADAPTER: Adapter = {
   },
 };
 
-export const MBPP_PROBLEMS: Problem[] = [
+export const MBPP_DEMO_PROBLEMS: Problem[] = [
   {
     id: "mbpp-001-adapter-only",
     benchmarkId: MBPP_BENCHMARK.id,
@@ -64,6 +65,14 @@ export const MBPP_PROBLEMS: Problem[] = [
     editableFilePaths: ["solution.py"],
   },
 ];
+
+export const MBPP_SCORED_PROBLEMS: Problem[] = mbppSubsetScoredProblems(MBPP_BENCHMARK.id, MBPP_ADAPTER.id);
+
+export const MBPP_PROBLEMS: Problem[] = [...MBPP_DEMO_PROBLEMS, ...MBPP_SCORED_PROBLEMS];
+
+export const MBPP_DESCRIPTOR_HASH_MANIFEST = MBPP_SUBSET_ORACLE_MANIFEST;
+export const MBPP_SELECTION_EXCLUSIONS = MBPP_SUBSET_SELECTION_EXCLUSIONS;
+export { MBPP_SUBSET_DESCRIPTOR_REVISION, MBPP_UPSTREAM_DATA_SHA256, MBPP_UPSTREAM_DATA_URL };
 
 export function listMbppProblems(): readonly Problem[] {
   return MBPP_PROBLEMS;
