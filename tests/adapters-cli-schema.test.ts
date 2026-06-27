@@ -618,6 +618,25 @@ describe("CLI runner prototype", () => {
     assert.match(result.issues?.join("\n") ?? "", /prSubmission\.prHeadSha\.mismatch/);
     assert.equal(summary.prHeadSha, trustedSha);
     assert.match(summary.validationMessages.join("\n"), /prSubmission\.prHeadSha\.mismatch/);
+    const omittedSummaryPath = join(dir, "omitted-summary.json");
+    writeFileSync(submissionPath, JSON.stringify({ ...envelope, prHeadSha: undefined }), "utf8");
+    const omitted = runCli([
+      "judge-pr-submission",
+      "--submission",
+      submissionPath,
+      "--patch",
+      patchPath,
+      "--summary-out",
+      omittedSummaryPath,
+      "--expected-pr-head-sha",
+      trustedSha,
+    ]);
+    const omittedSummary = JSON.parse(readFileSync(omittedSummaryPath, "utf8")) as { prHeadSha: string; validationMessages: string[] };
+
+    assert.equal(omitted.ok, false);
+    assert.equal(omittedSummary.prHeadSha, trustedSha);
+    assert.doesNotMatch(omitted.issues?.join("\n") ?? "", /prSubmission\.prHeadSha\.(invalid|mismatch)/);
+    assert.doesNotMatch(omittedSummary.validationMessages.join("\n"), /prSubmission\.prHeadSha\.(invalid|mismatch)/);
   });
   it("emits sanitized failing and invalid PR judge summaries", () => {
     const dir = mkdtempSync(join(tmpdir(), "agentoj-cli-judge-fail-"));

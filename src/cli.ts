@@ -475,10 +475,15 @@ export function runCli(args = process.argv.slice(2)): CliRunResult {
         ? (envelopeInput as Partial<PrSubmissionEnvelope>)
         : {};
     const envelope = envelopeRecord as PrSubmissionEnvelope;
-    const validation = validatePrSubmissionEnvelope(envelopeInput, judgeOptions);
+    const validation = validatePrSubmissionEnvelope(envelopeInput, {
+      ...judgeOptions,
+      requirePrHeadSha: expectedPrHeadSha ? false : true,
+    });
     const issueCodes = [...validation.issues.map((entry) => entry.code), ...patchIssueCodes];
     if (expectedPrHeadShaRaw && !expectedPrHeadSha) issueCodes.push("prSubmission.prHeadSha.expectedInvalid");
-    if (expectedPrHeadSha && envelope.prHeadSha !== expectedPrHeadSha) issueCodes.push("prSubmission.prHeadSha.mismatch");
+    if (expectedPrHeadSha && envelope.prHeadSha && envelope.prHeadSha !== expectedPrHeadSha) {
+      issueCodes.push("prSubmission.prHeadSha.mismatch");
+    }
     const summaryPrHeadSha = expectedPrHeadSha ?? envelope.prHeadSha ?? "0000000";
     if (patchIssueCodes.length === 0) issueCodes.push(...validateEnvelopeFilesAgainstPatch(envelopeRecord, parsedPatchFiles));
     const actualPatchSha256 = `sha256:${sha256Hex(patch)}`;

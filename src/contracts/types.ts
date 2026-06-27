@@ -111,7 +111,7 @@ export interface PrSubmissionEnvelope {
   id: string;
   problemId: string;
   adapterId: string;
-  prHeadSha: string;
+  prHeadSha?: string;
   patchSha256: string;
   patchBytes: number;
   patchStats: {

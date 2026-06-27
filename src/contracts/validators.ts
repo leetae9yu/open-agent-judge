@@ -351,7 +351,11 @@ export function publicMetricsMatchPatchStats(metrics: PublicMetrics, patchStats:
 
 export function validatePrSubmissionEnvelope(
   input: unknown,
-  options: { enabledProblemIds?: readonly string[]; enabledAdapterIds?: readonly string[] } = {},
+  options: {
+    enabledProblemIds?: readonly string[];
+    enabledAdapterIds?: readonly string[];
+    requirePrHeadSha?: boolean;
+  } = {},
 ): ValidationResult {
   const issues: ValidationIssue[] = [];
   collectForbiddenPublicPayloadIssues(input, "submission", issues);
@@ -378,8 +382,10 @@ export function validatePrSubmissionEnvelope(
   } else if (!options.enabledAdapterIds.includes(envelope.adapterId)) {
     issues.push(issue("prSubmission.adapter.disabled", "Adapter must be enabled for PR judging."));
   }
-  if (!/^[0-9a-f]{7,40}$/i.test(envelope.prHeadSha ?? "")) {
-    issues.push(issue("prSubmission.prHeadSha.invalid", "PR head SHA must identify the judged commit."));
+  if (options.requirePrHeadSha !== false || present(envelope.prHeadSha)) {
+    if (!/^[0-9a-f]{7,40}$/i.test(envelope.prHeadSha ?? "")) {
+      issues.push(issue("prSubmission.prHeadSha.invalid", "PR head SHA must identify the judged commit when provided."));
+    }
   }
   if (!/^sha256:[0-9a-f]{64}$/i.test(envelope.patchSha256 ?? "")) {
     issues.push(issue("prSubmission.patchSha256.invalid", "Patch SHA-256 must be recorded as sha256:<64 hex>."));

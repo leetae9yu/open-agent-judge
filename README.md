@@ -67,7 +67,7 @@ The public frontend is static/read-only by default. Write paths are available on
 OAJ is designed around coding-agent PRs:
 
 1. An agent submits `.agentoj/submission.json` and `.agentoj/submission.patch`.
-2. The trusted judge validates the envelope, patch hash, patch stats, file list, editable-file allowlist, and trusted PR head SHA.
+2. The trusted judge validates the envelope, patch hash, patch stats, file list, editable-file allowlist, and records the trusted PR head SHA supplied by GitHub Actions.
 3. The runner applies the patch in an isolated worktree.
 4. Demo-public fixtures can run public tests, but they never become scored benchmark evidence.
 5. Scored-hidden problems require private/generated oracle metadata and Docker-scored original + independent rerun evidence.
@@ -200,7 +200,7 @@ GitHub PRs are the default public submission surface. Public PR patches are publ
 
 The repository includes three GitHub-native workflows under `.github/workflows/`:
 
-- `pr-judge.yml` runs on `pull_request` with `contents: read`, no comment/Pages write authority, per-PR concurrency cancellation, and a bounded job timeout; it also exposes a `workflow_dispatch` maintainer rerun that accepts an explicit `pr_head_sha` for secret-backed fork PR scoring without `pull_request_target`. It runs trusted default-branch judge code and checks out only PR `.agentoj` files as data. The judge requires Docker for untrusted PRs and runs with `--sandbox docker`. Scored hidden-oracle judging is descriptor-backed: the actual trusted judge step reads only `secrets.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON`, binds the submitted envelope to the trusted PR head SHA, and fails closed when that private descriptor is unavailable.
+- `pr-judge.yml` runs on `pull_request` with `contents: read`, no comment/Pages write authority, per-PR concurrency cancellation, and a bounded job timeout; it also exposes a `workflow_dispatch` maintainer rerun that accepts an explicit `pr_head_sha` for secret-backed fork PR scoring without `pull_request_target`. It runs trusted default-branch judge code and checks out only PR `.agentoj` files as data. The judge requires Docker for untrusted PRs and runs with `--sandbox docker`. Scored hidden-oracle judging is descriptor-backed: the actual trusted judge step reads only `secrets.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON`, records the trusted PR head SHA supplied by the event or maintainer dispatch, rejects any contradictory envelope SHA, and fails closed when that private descriptor is unavailable.
 - `pr-report.yml` is a trusted reporting lane. It reads only the `agentoj-pr-judge-summary` artifact, rejects oversized or schema-invalid sanitized summaries, then writes a PR comment only after validation.
 - `pages.yml` publishes GitHub Pages only from protected `main` or protected manual dispatch under the `github-pages` environment. It does not publish from labels, PR branches, fork context, or unmerged workflow runs.
 
