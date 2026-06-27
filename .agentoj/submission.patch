@@ -1,0 +1,7 @@
+diff --git a/solution.py b/solution.py
+--- a/solution.py
++++ b/solution.py
+@@ -1,2 +1,2 @@
+ def candidate(xs):
+-    return None
++    return xs[0]
