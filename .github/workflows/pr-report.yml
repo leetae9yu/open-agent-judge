@@ -14,11 +14,16 @@ permissions:
   actions: read
   contents: write
   issues: write
+  pages: write
+  id-token: write
 
 jobs:
   report:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout trusted reporter code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
@@ -70,6 +75,7 @@ jobs:
 
       - name: Publish passed result to static leaderboard
         if: ${{ github.event.workflow_run.conclusion == 'success' || inputs.run_id }}
+        id: publish_leaderboard
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
         with:
           script: |
@@ -77,6 +83,7 @@ jobs:
             const summary = JSON.parse(fs.readFileSync('artifacts/report/pr-judge-summary.json', 'utf8'));
             if (summary.status !== 'passed' || summary.passFail !== 'pass') {
               core.info(`Skipping leaderboard update for status=${summary.status}`);
+              core.setOutput('updated', 'false');
               return;
             }
 
@@ -84,7 +91,8 @@ jobs:
             const path = 'web/data/leaderboard.json';
             const current = await github.rest.repos.getContent({ owner, repo, path, ref: 'main' });
             if (Array.isArray(current.data)) throw new Error('leaderboard path resolved to a directory');
-            const rows = JSON.parse(Buffer.from(current.data.content, current.data.encoding).toString('utf8'));
+            const currentText = Buffer.from(current.data.content, current.data.encoding).toString('utf8');
+            const rows = JSON.parse(currentText);
             if (!Array.isArray(rows)) throw new Error('leaderboard json must be an array');
 
             const entry = {
@@ -99,16 +107,38 @@ jobs:
               eligibilityStatus: 'eligible'
             };
             const next = [entry, ...rows.filter((row) => row.id !== entry.id)].slice(0, 100);
-            const content = Buffer.from(`${JSON.stringify(next, null, 2)}\n`, 'utf8').toString('base64');
-            await github.rest.repos.createOrUpdateFileContents({
-              owner,
-              repo,
-              path,
-              message: `Record OAJ scored result for ${summary.submissionId}`,
-              content,
-              sha: current.data.sha,
-              branch: 'main'
-            });
+            const nextText = `${JSON.stringify(next, null, 2)}\n`;
+            const content = Buffer.from(nextText, 'utf8').toString('base64');
+            fs.writeFileSync(path, nextText);
+            if (currentText !== nextText) {
+              await github.rest.repos.createOrUpdateFileContents({
+                owner,
+                repo,
+                path,
+                message: `Record OAJ scored result for ${summary.submissionId}`,
+                content,
+                sha: current.data.sha,
+                branch: 'main'
+              });
+            } else {
+              core.info('Leaderboard already contains this scored result; deploying current static data.');
+            }
+            core.setOutput('updated', 'true');
+
+      - name: Configure Pages
+        if: ${{ steps.publish_leaderboard.outputs.updated == 'true' }}
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
+
+      - name: Upload Pages artifact
+        if: ${{ steps.publish_leaderboard.outputs.updated == 'true' }}
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        with:
+          path: web
+
+      - name: Deploy Pages
+        if: ${{ steps.publish_leaderboard.outputs.updated == 'true' }}
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
 
       - name: Comment sanitized result on PR
         if: ${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.pull_requests[0].number }}

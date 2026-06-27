@@ -147,7 +147,8 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.equal(permissions.get("contents"), "write");
     assert.equal(permissions.has("pull-requests"), false);
     assert.equal(permissions.get("issues"), "write");
-    assert.equal(permissions.has("pages"), false);
+    assert.equal(permissions.get("pages"), "write");
+    assert.equal(permissions.get("id-token"), "write");
     assert.doesNotMatch(report, /\.agentoj\/submission\.patch|\.agentoj\/submission\.json/);
     assert.match(report, /artifact\.name === 'agentoj-pr-judge-summary'/);
     assert.match(report, /summary\.size_in_bytes > 64 \* 1024/);
@@ -155,6 +156,7 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.match(report, /escapeMarkdown/);
     assert.match(report, /validationMessages\.map\(\(message\) => `- \$\{escapeMarkdown\(message\)\}`\)/);
     assert.match(report, /continue-on-error: true/);
+    assert.match(report, /actions\/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e/);
     assert.match(report, /Publish passed result to static leaderboard/);
     assert.match(report, /web\/data\/leaderboard\.json/);
     assert.match(report, /summary\.status !== 'passed'/);
