@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": "sha256:fd4eea0b9e15505d0809dcda8afba537983462422637bbcb7b0bc38612a29560",
+    "problemId": "humaneval-001",
+    "submissionId": "live-smoke-humaneval-001",
+    "passFail": "pass",
+    "runtimeMs": 0,
+    "filesChanged": 1,
+    "locAdded": 1,
+    "locDeleted": 1,
+    "eligibilityStatus": "eligible"
+  }
+]
