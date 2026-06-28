@@ -170,6 +170,7 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.equal(permissions.get("issues"), "write");
     assert.equal(permissions.get("pages"), "write");
     assert.equal(permissions.get("id-token"), "write");
+    assert.match(report, /concurrency:\n  group: agentoj-pr-report\n  cancel-in-progress: false/);
     assert.doesNotMatch(report, /\.agentoj\/submission\.patch|\.agentoj\/submission\.json/);
     assert.match(report, /artifact\.name === 'agentoj-pr-judge-summary'/);
     assert.match(report, /getWorkflowRun/);

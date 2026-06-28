@@ -17,6 +17,9 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: agentoj-pr-report
+  cancel-in-progress: false
 jobs:
   report:
     runs-on: ubuntu-latest
