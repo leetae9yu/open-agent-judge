@@ -194,6 +194,9 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.match(report, /row\.submissionId !== entry\.submissionId && row\.id !== entry\.id/);
     assert.match(report, /core\.setOutput\('updated', currentText === nextText \? 'false' : 'true'\)/);
     assert.match(report, /Leaderboard already contains this scored submission; skipping Pages deployment\./);
+    assert.match(report, /inferSubmissionMeta/);
+    assert.match(report, /model: 'gpt-5\.5', harness: 'Codex CLI', reasoningEffort: effort/);
+    assert.match(report, /model: 'deepseek-v4-flash-free', harness: 'opencode'/);
     assertPinnedActions(report);
 
     const validateIndex = report.indexOf("Validate sanitized summary schema");

@@ -169,6 +169,32 @@ describe("web UI skeleton", () => {
     assert.match(privilegedApi.elements.get("[data-discussion]")!.innerHTML, /Reviewer approval/);
   });
 
+  it("renders leaderboard rows by model, harness, problem, runtime, and LOC", async () => {
+    const run = await bootApp(
+      staticFetch({
+        "./data/leaderboard.json": [
+          {
+            id: "sha256:" + "a".repeat(64),
+            problemId: "humaneval-full-008",
+            submissionId: "oaj-codex-high-humaneval-full-008-2f994985",
+            passFail: "pass",
+            runtimeMs: 1234,
+            locAdded: 2,
+            locDeleted: 0,
+            eligibilityStatus: "eligible",
+          },
+        ],
+      }),
+    );
+    const html = run.elements.get("[data-leaderboard]")!.innerHTML;
+    assert.match(html, /gpt-5\.5/);
+    assert.match(html, /Codex CLI/);
+    assert.match(html, /effort high/);
+    assert.match(html, /humaneval-full-008/);
+    assert.match(html, /1\.23 s/);
+    assert.match(html, /\+2\/-0/);
+  });
+
   it("rejects unsafe api query origins without persisting them", async () => {
     const fetched: string[] = [];
     const fetchImpl = async (path: string) => {

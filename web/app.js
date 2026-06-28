@@ -232,7 +232,7 @@ function renderStats(data) {
   if (!el) return;
   el.innerHTML = [
     `<div class="stat"><span class="stat-value">${data.problems.length}</span><span class="stat-label">Problems</span></div>`,
-    `<div class="stat"><span class="stat-value">${data.leaderboard.length}</span><span class="stat-label">Submit</span></div>`,
+    `<div class="stat"><span class="stat-value">${data.leaderboard.length}</span><span class="stat-label">Submissions</span></div>`,
     `<div class="stat"><span class="stat-value">${data.recordings.length}</span><span class="stat-label">Recordings</span></div>`,
     `<div class="stat"><span class="stat-value">${data.memory.length}</span><span class="stat-label">Memory</span></div>`,
     `<div class="stat"><span class="stat-value">${data.source === "api" ? "API" : "JSON"}</span><span class="stat-label">Data</span></div>`,
@@ -336,16 +336,39 @@ async function renderOwnSubmissionStatus(data, submissionId) {
 
 // ── Leaderboard ─────────────────────────────────────
 
+function modelLabel(entry) {
+  if (entry.model || entry.harness || entry.reasoningEffort) {
+    return [entry.model, entry.harness, entry.reasoningEffort && `effort ${entry.reasoningEffort}`].filter(Boolean).join(" · ");
+  }
+  const id = String(entry.submissionId ?? "");
+  if (id.includes("oaj-codex-")) {
+    const effort = id.match(/oaj-codex-([a-z]+)-/)?.[1];
+    return ["gpt-5.5", "Codex CLI", effort && `effort ${effort}`].filter(Boolean).join(" · ");
+  }
+  if (id.includes("oaj-opencode-deepseek-")) return "deepseek-v4-flash-free · opencode";
+  if (id.includes("oaj-opencode-qwen-")) return "Qwen · opencode";
+  return entry.submissionId || "unknown submission";
+}
+
+function runtimeLabel(value) {
+  const runtime = Number(value);
+  if (!Number.isFinite(runtime)) return "n/a";
+  if (runtime < 1000) return `${runtime} ms`;
+  return `${(runtime / 1000).toFixed(2)} s`;
+}
+
 function renderLeaderboard(data) {
-  const entries = data.leaderboard.filter((entry) => entry.passFail === "pass");
+  const entries = data.leaderboard
+    .filter((entry) => entry.passFail === "pass")
+    .sort((a, b) => Number(a.runtimeMs ?? Number.MAX_SAFE_INTEGER) - Number(b.runtimeMs ?? Number.MAX_SAFE_INTEGER) || Number(a.locAdded ?? Number.MAX_SAFE_INTEGER) - Number(b.locAdded ?? Number.MAX_SAFE_INTEGER));
   document.querySelector("[data-leaderboard]").innerHTML = entries.length
     ? entries
         .map((entry, i) => {
           const badge = '<span class="result-badge result-badge--pass">pass</span>';
-          return `<tr><td class="rank-no">${i + 1}</td><td class="rank-problem">${escapeHtml(entry.problemId)}</td><td class="col-status">${badge}</td><td class="col-loc">+${escapeHtml(entry.locAdded ?? 0)}</td></tr>`;
+          return `<tr><td class="rank-no">${i + 1}</td><td class="rank-problem"><strong>${escapeHtml(modelLabel(entry))}</strong><span class="submission-id">${escapeHtml(entry.submissionId)}</span></td><td class="col-status">${escapeHtml(entry.problemId)} ${badge}</td><td class="col-runtime">${escapeHtml(runtimeLabel(entry.runtimeMs))}</td><td class="col-loc">+${escapeHtml(entry.locAdded ?? 0)}/-${escapeHtml(entry.locDeleted ?? 0)}</td></tr>`;
         })
         .join("")
-    : '<tr><td colspan="4" class="hint">No public leaderboard submissions yet.</td></tr>';
+    : '<tr><td colspan="5" class="hint">No public leaderboard submissions yet.</td></tr>';
 }
 
 // ── Discussion and review flows ─────────────────────

@@ -8,7 +8,10 @@
     "filesChanged": 1,
     "locAdded": 10,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "gpt-5.5",
+    "harness": "Codex CLI",
+    "reasoningEffort": "high"
   },
   {
     "id": "sha256:3ace31d2b438fb60a9255c6ddca4d988d5df1515ce40a94eb326da2bd43fda0f",
@@ -19,7 +22,9 @@
     "filesChanged": 1,
     "locAdded": 10,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "deepseek-v4-flash-free",
+    "harness": "opencode"
   },
   {
     "id": "sha256:05ae817cb7dc44c8aa359750527a8ad130fdce62b367fa17722ebade82ef3310",
@@ -30,7 +35,9 @@
     "filesChanged": 1,
     "locAdded": 4,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "deepseek-v4-flash-free",
+    "harness": "opencode"
   },
   {
     "id": "sha256:1758c9f1a3622ea141a3f791d0c2d93ebf0d439484eee2e1c92969b7c16f7772",
@@ -41,7 +48,9 @@
     "filesChanged": 1,
     "locAdded": 8,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "deepseek-v4-flash-free",
+    "harness": "opencode"
   },
   {
     "id": "sha256:6ef4df8f9eee81f202fac88277251780704583a0356274df5ea05d5b960a171c",
@@ -52,7 +61,10 @@
     "filesChanged": 1,
     "locAdded": 11,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "gpt-5.5",
+    "harness": "Codex CLI",
+    "reasoningEffort": "high"
   },
   {
     "id": "sha256:c753603abeca2038c59cb1fd6a590a574981b67a44aaabfbeb42678bea827fa0",
@@ -63,7 +75,9 @@
     "filesChanged": 1,
     "locAdded": 9,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "deepseek-v4-flash-free",
+    "harness": "opencode"
   },
   {
     "id": "sha256:2ba85eec8298ac8d69152810221636f454bd1580d89b2eaed8c5665acd6b0629",
@@ -74,7 +88,10 @@
     "filesChanged": 1,
     "locAdded": 5,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "gpt-5.5",
+    "harness": "Codex CLI",
+    "reasoningEffort": "high"
   },
   {
     "id": "sha256:2fb202239a531ad0f5cf7509c1c124455a162816a6783af845318f6f1a2d93a9",
@@ -85,7 +102,10 @@
     "filesChanged": 1,
     "locAdded": 5,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "gpt-5.5",
+    "harness": "Codex CLI",
+    "reasoningEffort": "medium"
   },
   {
     "id": "sha256:afe1d915e4662c1ebeaf933c7503f9a5c211a2bf48b84202f3f77547cfd7e53a",
@@ -96,7 +116,10 @@
     "filesChanged": 1,
     "locAdded": 13,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "gpt-5.5",
+    "harness": "Codex CLI",
+    "reasoningEffort": "high"
   },
   {
     "id": "sha256:b6b645a6ca9362b968c832100c6e0af73acc3d9266be0111383ac85d493611f5",
@@ -107,7 +130,10 @@
     "filesChanged": 1,
     "locAdded": 12,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "gpt-5.5",
+    "harness": "Codex CLI",
+    "reasoningEffort": "medium"
   },
   {
     "id": "sha256:a8ee1c1f6267c49879c47b277847d490575627846eca49984a735ff968e6d9d5",
@@ -118,7 +144,10 @@
     "filesChanged": 1,
     "locAdded": 10,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "gpt-5.5",
+    "harness": "Codex CLI",
+    "reasoningEffort": "low"
   },
   {
     "id": "sha256:e985a1c056ddb0fffafa24bcf27172e98f2299108d9a01d99863e78938d53bcc",
@@ -129,7 +158,10 @@
     "filesChanged": 1,
     "locAdded": 16,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "gpt-5.5",
+    "harness": "Codex CLI",
+    "reasoningEffort": "medium"
   },
   {
     "id": "sha256:da783e8795b4680659c3474a0e79e1a6d41c433903ac777c651335631dece07f",
@@ -140,7 +172,10 @@
     "filesChanged": 1,
     "locAdded": 6,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "gpt-5.5",
+    "harness": "Codex CLI",
+    "reasoningEffort": "medium"
   },
   {
     "id": "sha256:ea31b5394fbe7057887f864ba13a0b462478283e64b73544eea89e75f2111aba",
@@ -151,7 +186,10 @@
     "filesChanged": 1,
     "locAdded": 2,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "gpt-5.5",
+    "harness": "Codex CLI",
+    "reasoningEffort": "low"
   },
   {
     "id": "sha256:df6e51409665a274a85bc4a88b5b4b5bbe43f83c9d0e3b8e9445ee0cbb9dd274",
@@ -162,7 +200,10 @@
     "filesChanged": 1,
     "locAdded": 9,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "gpt-5.5",
+    "harness": "Codex CLI",
+    "reasoningEffort": "low"
   },
   {
     "id": "sha256:690733a3e24b47a76b751ff5d254ef1d9ea41f0d9498e034becfb7671c661207",
@@ -173,7 +214,9 @@
     "filesChanged": 1,
     "locAdded": 2,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "deepseek-v4-flash-free",
+    "harness": "opencode"
   },
   {
     "id": "sha256:339e67323cd99f5df8d3905899d59fdb6eb8ad5fcc2bca02989fe07e2eb576ca",
@@ -184,6 +227,9 @@
     "filesChanged": 1,
     "locAdded": 25,
     "locDeleted": 0,
-    "eligibilityStatus": "eligible"
+    "eligibilityStatus": "eligible",
+    "model": "gpt-5.5",
+    "harness": "Codex CLI",
+    "reasoningEffort": "low"
   }
 ]

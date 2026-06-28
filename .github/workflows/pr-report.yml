@@ -99,6 +99,17 @@ jobs:
               return;
             }
 
+            const inferSubmissionMeta = (submissionId) => {
+              const id = String(submissionId || '');
+              if (id.includes('oaj-codex-')) {
+                const effort = id.match(/oaj-codex-([a-z]+)-/)?.[1];
+                return { model: 'gpt-5.5', harness: 'Codex CLI', reasoningEffort: effort };
+              }
+              if (id.includes('oaj-opencode-deepseek-')) return { model: 'deepseek-v4-flash-free', harness: 'opencode' };
+              if (id.includes('oaj-opencode-qwen-')) return { model: 'Qwen', harness: 'opencode' };
+              return {};
+            };
+
             const { owner, repo } = context.repo;
             const path = 'web/data/leaderboard.json';
             const current = await github.rest.repos.getContent({ owner, repo, path, ref: 'main' });
@@ -116,7 +127,8 @@ jobs:
               filesChanged: Number(summary.patchStats.filesChanged),
               locAdded: Number(summary.patchStats.locAdded),
               locDeleted: Number(summary.patchStats.locDeleted),
-              eligibilityStatus: 'eligible'
+              eligibilityStatus: 'eligible',
+              ...inferSubmissionMeta(summary.submissionId),
             };
             const next = [entry, ...rows.filter((row) => row.submissionId !== entry.submissionId && row.id !== entry.id)].slice(0, 100);
             const nextText = `${JSON.stringify(next, null, 2)}\n`;

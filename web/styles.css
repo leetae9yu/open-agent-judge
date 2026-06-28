@@ -192,7 +192,8 @@ a:hover {
 .col-source { width: 110px; }
 .col-mode { width: 100px; }
 .col-rank { width: 60px; text-align: center; }
-.col-status { width: 80px; text-align: center; }
+.col-status { width: 180px; }
+.col-runtime { width: 100px; text-align: right; }
 .col-loc { width: 90px; text-align: right; }
 .col-problem { width: auto; }
 
@@ -311,6 +312,15 @@ a:hover {
 
 .rank-problem {
   font-weight: 600;
+}
+
+.submission-id {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 400;
 }
 
 /* ── Memory ───────────────────────────────────────── */
