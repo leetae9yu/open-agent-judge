@@ -197,6 +197,11 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.match(report, /inferSubmissionMeta/);
     assert.match(report, /model: 'gpt-5\.5', harness: 'Codex CLI', reasoningEffort: effort/);
     assert.match(report, /model: 'deepseek-v4-flash-free', harness: 'opencode'/);
+    assert.match(report, /RUN_ID: \$\{\{ github\.event\.workflow_run\.id \|\| inputs\.run_id \}\}/);
+    assert.match(report, /listPullRequestsAssociatedWithCommit/);
+    assert.match(report, /solver: prMetadata\.solver \?\? 'unknown'/);
+    assert.match(report, /prNumber: prMetadata\.prNumber/);
+    assert.match(report, /evidenceRunUrl: sourceRun\.data\.html_url/);
     assertPinnedActions(report);
 
     const validateIndex = report.indexOf("Validate sanitized summary schema");

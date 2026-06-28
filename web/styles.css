@@ -192,9 +192,11 @@ a:hover {
 .col-source { width: 110px; }
 .col-mode { width: 100px; }
 .col-problem-id { width: 150px; }
+.col-solver { width: 110px; }
 .col-status { width: 90px; text-align: center; }
 .col-runtime { width: 100px; text-align: right; }
 .col-loc { width: 90px; text-align: right; }
+.col-evidence { width: 120px; }
 .col-problem { width: auto; }
 
 .problem-no {
@@ -311,6 +313,12 @@ a:hover {
 }
 
 .rank-problem {
+  font-weight: 600;
+}
+
+.col-evidence a {
+  color: var(--primary);
+  font-size: 0.8rem;
   font-weight: 600;
 }
 

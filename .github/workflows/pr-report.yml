@@ -88,6 +88,8 @@ jobs:
       - name: Publish passed result to static leaderboard
         if: ${{ steps.download_summary.outputs.judge_conclusion == 'success' }}
         id: publish_leaderboard
+        env:
+          RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
         with:
           script: |
@@ -111,6 +113,28 @@ jobs:
             };
 
             const { owner, repo } = context.repo;
+
+            const sourceRunId = Number(process.env.RUN_ID || 0);
+            const sourceRun = sourceRunId
+              ? await github.rest.actions.getWorkflowRun({ owner, repo, run_id: sourceRunId })
+              : { data: { html_url: '' } };
+            const resolvePrMetadata = async () => {
+              try {
+                const pulls = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: summary.prHeadSha });
+                const pr = pulls.data.find((candidate) => candidate.state === 'open') ?? pulls.data[0];
+                if (!pr) return {};
+                return {
+                  solver: pr.user?.login,
+                  prNumber: pr.number,
+                  prUrl: pr.html_url,
+                };
+              } catch (error) {
+                core.info(`PR metadata lookup skipped: ${error?.message ?? error}`);
+                return {};
+              }
+            };
+            const prMetadata = await resolvePrMetadata();
+
             const path = 'web/data/leaderboard.json';
             const current = await github.rest.repos.getContent({ owner, repo, path, ref: 'main' });
             if (Array.isArray(current.data)) throw new Error('leaderboard path resolved to a directory');
@@ -122,6 +146,12 @@ jobs:
               id: summary.resultHash,
               problemId: summary.problemId,
               submissionId: summary.submissionId,
+              solver: prMetadata.solver ?? 'unknown',
+              prNumber: prMetadata.prNumber,
+              prUrl: prMetadata.prUrl,
+              commitSha: summary.prHeadSha,
+              evidenceRunId: sourceRunId || undefined,
+              evidenceRunUrl: sourceRun.data.html_url || undefined,
               passFail: summary.passFail,
               runtimeMs: Number(summary.runtimeMs),
               filesChanged: Number(summary.patchStats.filesChanged),

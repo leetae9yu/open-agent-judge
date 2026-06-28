@@ -182,6 +182,11 @@ describe("web UI skeleton", () => {
             locAdded: 2,
             locDeleted: 0,
             eligibilityStatus: "eligible",
+            solver: "octocat",
+            prNumber: 42,
+            prUrl: "https://github.com/leetae9yu/open-agent-judge/pull/42",
+            evidenceRunId: 1234,
+            evidenceRunUrl: "https://github.com/leetae9yu/open-agent-judge/actions/runs/1234",
           },
         ],
       }),
@@ -190,6 +195,9 @@ describe("web UI skeleton", () => {
     assert.match(html, /gpt-5\.5/);
     assert.match(html, /Codex CLI/);
     assert.match(html, /effort high/);
+    assert.match(html, /@octocat/);
+    assert.match(html, /PR #42/);
+    assert.match(html, /run 1234/);
     assert.match(html, /humaneval-full-008/);
     assert.match(html, /1\.23 s/);
     assert.match(html, /\+2\/-0/);

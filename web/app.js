@@ -347,7 +347,7 @@ function modelLabel(entry) {
   }
   if (id.includes("oaj-opencode-deepseek-")) return "deepseek-v4-flash-free · opencode";
   if (id.includes("oaj-opencode-qwen-")) return "Qwen · opencode";
-  return entry.submissionId || "unknown submission";
+  return "No runner note";
 }
 
 function runtimeLabel(value) {
@@ -357,6 +357,19 @@ function runtimeLabel(value) {
   return `${(runtime / 1000).toFixed(2)} s`;
 }
 
+function solverLabel(entry) {
+  return entry.solver ? `@${entry.solver}` : "unknown";
+}
+
+function evidenceLinks(entry) {
+  const links = [];
+  if (entry.prUrl && entry.prNumber) links.push(`<a href="${escapeHtml(entry.prUrl)}">PR #${escapeHtml(entry.prNumber)}</a>`);
+  if (entry.evidenceRunUrl && entry.evidenceRunId) links.push(`<a href="${escapeHtml(entry.evidenceRunUrl)}">run ${escapeHtml(entry.evidenceRunId)}</a>`);
+  if (!links.length && entry.commitSha) links.push(`<code>${escapeHtml(String(entry.commitSha).slice(0, 7))}</code>`);
+  return links.length ? links.join("<br>") : "verified";
+}
+
+
 function renderLeaderboard(data) {
   const entries = data.leaderboard
     .filter((entry) => entry.passFail === "pass")
@@ -365,10 +378,10 @@ function renderLeaderboard(data) {
     ? entries
         .map((entry) => {
           const badge = '<span class="result-badge result-badge--pass">pass</span>';
-          return `<tr><td class="rank-problem-id">${escapeHtml(entry.problemId)}</td><td class="rank-problem"><strong>${escapeHtml(modelLabel(entry))}</strong><span class="submission-id">${escapeHtml(entry.submissionId)}</span></td><td class="col-status">${badge}</td><td class="col-runtime">${escapeHtml(runtimeLabel(entry.runtimeMs))}</td><td class="col-loc">+${escapeHtml(entry.locAdded ?? 0)}/-${escapeHtml(entry.locDeleted ?? 0)}</td></tr>`;
+          return `<tr><td class="rank-problem-id">${escapeHtml(entry.problemId)}</td><td class="col-solver"><strong>${escapeHtml(solverLabel(entry))}</strong></td><td class="rank-problem"><strong>${escapeHtml(modelLabel(entry))}</strong><span class="submission-id">${escapeHtml(entry.submissionId)}</span></td><td class="col-status">${badge}</td><td class="col-runtime">${escapeHtml(runtimeLabel(entry.runtimeMs))}</td><td class="col-loc">+${escapeHtml(entry.locAdded ?? 0)}/-${escapeHtml(entry.locDeleted ?? 0)}</td><td class="col-evidence">${evidenceLinks(entry)}</td></tr>`;
         })
         .join("")
-    : '<tr><td colspan="5" class="hint">No public leaderboard submissions yet.</td></tr>';
+    : '<tr><td colspan="7" class="hint">No public leaderboard submissions yet.</td></tr>';
 }
 
 // ── Discussion and review flows ─────────────────────
