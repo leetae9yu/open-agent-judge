@@ -1958,8 +1958,8 @@ describe("local patch runner", () => {
       ),
     );
 
-    assert.deepEqual(args.slice(0, 3), ["run", "--rm", "--name"]);
-    assert.match(args[3], /^agentoj-humaneval-001-submission-humaneval-001-docker-args-[0-9a-f]+$/);
+    assert.deepEqual(args.slice(0, 4), ["run", "--rm", "-i", "--name"]);
+    assert.match(args[4], /^agentoj-humaneval-001-submission-humaneval-001-docker-args-[0-9a-f]+$/);
     assert.ok(args.includes("--network"));
     assert.ok(args.includes("none"));
     assert.ok(args.includes("--user"));

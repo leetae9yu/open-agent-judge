@@ -1075,6 +1075,7 @@ export function dockerHiddenOracleRunArgs(
   return [
     "run",
     "--rm",
+    "-i",
     "--name",
     containerName,
     "--network",
@@ -1130,6 +1131,7 @@ export function dockerOfficialTestRunArgs(
   return [
     "run",
     "--rm",
+    "-i",
     "--name",
     containerName,
     "--network",
@@ -1194,6 +1196,7 @@ export function dockerCommandHiddenRunArgs(
   return [
     "run",
     "--rm",
+    "-i",
     "--name",
     containerName,
     "--network",
