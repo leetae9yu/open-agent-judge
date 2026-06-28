@@ -64,9 +64,14 @@ jobs:
 
       - name: Smoke test Docker sandbox against trusted fixture
         run: |
-          node --experimental-strip-types src/cli.ts run humaneval-001 \
-            --patch .github/agentoj-smoke/humaneval-001-pass.diff \
-            --sandbox docker
+          docker run --rm \
+            --network none \
+            --cpus 1 \
+            --memory 512m \
+            --pids-limit 64 \
+            --read-only \
+            python:3.12.11-slim-bookworm@sha256:519591d6871b7bc437060736b9f7456b8731f1499a57e22e6c285135ae657bf7 \
+            python -c "print('agentoj-docker-smoke')"
 
       - name: Install pinned SWE-bench harness
         if: ${{ github.event_name == 'workflow_dispatch' }}

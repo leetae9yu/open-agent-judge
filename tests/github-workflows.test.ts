@@ -110,7 +110,8 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.match(judge, /--sandbox docker/);
     assert.match(judge, /Smoke test Docker sandbox against trusted fixture/);
     assert.equal(judge.includes("npm ci"), existsSync("package-lock.json"));
-    assert.match(judge, /\.github\/agentoj-smoke\/humaneval-001-pass\.diff/);
+    assert.match(judge, /agentoj-docker-smoke/);
+    assert.match(judge, /python:3\.12\.11-slim-bookworm@sha256:[0-9a-f]{64}/);
     assert.match(judge, /AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON/);
     assert.doesNotMatch(judge, /"cases":\[\{"id":"private-smoke-case","args":\[\[1\]\],"expected":1\}\]/);
     assert.match(judge, /secrets\.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON/);

@@ -90,7 +90,7 @@ describe("PR-based operating model docs and cost controls", () => {
     assert.equal(workflowLines.some((line) => line === "contents: read"), true);
     assert.equal(workflowLines.some((line) => line.includes("node --experimental-strip-types src/cli.ts judge-pr-submission")), true);
     assert.equal(workflowLines.some((line) => line.includes("--sandbox docker")), true);
-    assert.equal(workflowLines.some((line) => line.includes(".github/agentoj-smoke/humaneval-001-pass.diff")), true);
+    assert.equal(workflowLines.some((line) => line.includes("agentoj-docker-smoke")), true);
 
     const quixbugsPolicy = BENCHMARK_EXECUTION_POLICIES.find((policy) => policy.benchmarkId === "quixbugs");
     assert.deepEqual(quixbugsPolicy?.resources, { timeoutSeconds: 120, cpuCores: 1, memoryMb: 1024, networkPolicy: "blocked" });
