@@ -118,7 +118,7 @@ jobs:
               locDeleted: Number(summary.patchStats.locDeleted),
               eligibilityStatus: 'eligible'
             };
-            const next = [entry, ...rows.filter((row) => row.id !== entry.id)].slice(0, 100);
+            const next = [entry, ...rows.filter((row) => row.submissionId !== entry.submissionId && row.id !== entry.id)].slice(0, 100);
             const nextText = `${JSON.stringify(next, null, 2)}\n`;
             const content = Buffer.from(nextText, 'utf8').toString('base64');
             fs.writeFileSync(path, nextText);
@@ -133,9 +133,9 @@ jobs:
                 branch: 'main'
               });
             } else {
-              core.info('Leaderboard already contains this scored result; deploying current static data.');
+              core.info('Leaderboard already contains this scored submission; skipping Pages deployment.');
             }
-            core.setOutput('updated', 'true');
+            core.setOutput('updated', currentText === nextText ? 'false' : 'true');
 
       - name: Configure Pages
         if: ${{ steps.publish_leaderboard.outputs.updated == 'true' }}

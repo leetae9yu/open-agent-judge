@@ -154,28 +154,6 @@
     "eligibilityStatus": "eligible"
   },
   {
-    "id": "sha256:c1c18c2382ac9b0eb467f833f0c25dbde7efdef4fc902bf2c8f812e1485310b4",
-    "problemId": "mbpp-full-011",
-    "submissionId": "oaj-opencode-deepseek-mbpp-full-011-528de401",
-    "passFail": "pass",
-    "runtimeMs": 0,
-    "filesChanged": 1,
-    "locAdded": 10,
-    "locDeleted": 0,
-    "eligibilityStatus": "eligible"
-  },
-  {
-    "id": "sha256:a27b886e8b9add6a6c49a771cd9e2f95e27a3abb65c6bde1886c1fac8d614bec",
-    "problemId": "mbpp-full-009",
-    "submissionId": "oaj-opencode-deepseek-mbpp-full-009-02e18358",
-    "passFail": "pass",
-    "runtimeMs": 0,
-    "filesChanged": 1,
-    "locAdded": 8,
-    "locDeleted": 0,
-    "eligibilityStatus": "eligible"
-  },
-  {
     "id": "sha256:690733a3e24b47a76b751ff5d254ef1d9ea41f0d9498e034becfb7671c661207",
     "problemId": "mbpp-full-008",
     "submissionId": "oaj-opencode-deepseek-mbpp-full-008-0c3c0b98",
@@ -187,72 +165,6 @@
     "eligibilityStatus": "eligible"
   },
   {
-    "id": "sha256:c4f5090663a71ff06d08c95c7f16db65aa5c8d545d80d075d478ae46085927bd",
-    "problemId": "humaneval-full-010",
-    "submissionId": "oaj-codex-high-humaneval-full-010-56a68ea0",
-    "passFail": "pass",
-    "runtimeMs": 0,
-    "filesChanged": 1,
-    "locAdded": 11,
-    "locDeleted": 0,
-    "eligibilityStatus": "eligible"
-  },
-  {
-    "id": "sha256:fbcd0eaa7c55c7a35487e8a720e65119392c200641391854e8889276304df6a9",
-    "problemId": "humaneval-full-011",
-    "submissionId": "oaj-codex-high-humaneval-full-011-5c2571b5",
-    "passFail": "pass",
-    "runtimeMs": 0,
-    "filesChanged": 1,
-    "locAdded": 5,
-    "locDeleted": 0,
-    "eligibilityStatus": "eligible"
-  },
-  {
-    "id": "sha256:eef28fcefc36fc614d97374c34f241a52f04afde744f735b82a5e82c90e81a03",
-    "problemId": "mbpp-full-003",
-    "submissionId": "oaj-opencode-deepseek-mbpp-full-003-7c1f4986",
-    "passFail": "pass",
-    "runtimeMs": 0,
-    "filesChanged": 1,
-    "locAdded": 9,
-    "locDeleted": 0,
-    "eligibilityStatus": "eligible"
-  },
-  {
-    "id": "sha256:8b876439106e6edbde34646cb3ef22d1b4fd599fad228577ed977ca7e53d286a",
-    "problemId": "humaneval-full-000",
-    "submissionId": "oaj-codex-low-humaneval-full-000-740f1e71",
-    "passFail": "pass",
-    "runtimeMs": 0,
-    "filesChanged": 1,
-    "locAdded": 9,
-    "locDeleted": 0,
-    "eligibilityStatus": "eligible"
-  },
-  {
-    "id": "sha256:c2663722345402f839670c4f521248facbcd7b56886d9326aad9c3bea47bacad",
-    "problemId": "humaneval-full-006",
-    "submissionId": "oaj-codex-medium-humaneval-full-006-03948168",
-    "passFail": "pass",
-    "runtimeMs": 0,
-    "filesChanged": 1,
-    "locAdded": 16,
-    "locDeleted": 0,
-    "eligibilityStatus": "eligible"
-  },
-  {
-    "id": "sha256:6aac82459fdf2f1cf6f0771e5cf91a9ca097087b3cf7284269423ab95ae464aa",
-    "problemId": "humaneval-full-004",
-    "submissionId": "oaj-codex-medium-humaneval-full-004-5eb106ed",
-    "passFail": "pass",
-    "runtimeMs": 0,
-    "filesChanged": 1,
-    "locAdded": 6,
-    "locDeleted": 0,
-    "eligibilityStatus": "eligible"
-  },
-  {
     "id": "sha256:339e67323cd99f5df8d3905899d59fdb6eb8ad5fcc2bca02989fe07e2eb576ca",
     "problemId": "humaneval-full-001",
     "submissionId": "oaj-codex-low-humaneval-full-001-cccd8bd5",
@@ -260,28 +172,6 @@
     "runtimeMs": 0,
     "filesChanged": 1,
     "locAdded": 25,
-    "locDeleted": 0,
-    "eligibilityStatus": "eligible"
-  },
-  {
-    "id": "sha256:d42974155e42b706ed89d78a0759ea3a5eb6fe022b7fa0df4b4d8e9bb59e4b78",
-    "problemId": "humaneval-full-002",
-    "submissionId": "oaj-codex-low-humaneval-full-002-7bfdf017",
-    "passFail": "pass",
-    "runtimeMs": 0,
-    "filesChanged": 1,
-    "locAdded": 2,
-    "locDeleted": 0,
-    "eligibilityStatus": "eligible"
-  },
-  {
-    "id": "sha256:95ce0b59a03d750d5b1cbdbbf8dd27d1633c2da1e343e6c5dccc76e1be23e3f2",
-    "problemId": "humaneval-full-003",
-    "submissionId": "oaj-codex-low-humaneval-full-003-88a28ffd",
-    "passFail": "pass",
-    "runtimeMs": 0,
-    "filesChanged": 1,
-    "locAdded": 10,
     "locDeleted": 0,
     "eligibilityStatus": "eligible"
   }

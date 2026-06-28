@@ -191,6 +191,9 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.match(report, /steps\.download_summary\.outputs\.judge_conclusion == 'success'/);
     assert.doesNotMatch(report, /github\.event\.workflow_run\.conclusion == 'success' \|\| inputs\.run_id/);
     assert.match(report, /summary\.status !== 'passed'/);
+    assert.match(report, /row\.submissionId !== entry\.submissionId && row\.id !== entry\.id/);
+    assert.match(report, /core\.setOutput\('updated', currentText === nextText \? 'false' : 'true'\)/);
+    assert.match(report, /Leaderboard already contains this scored submission; skipping Pages deployment\./);
     assertPinnedActions(report);
 
     const validateIndex = report.indexOf("Validate sanitized summary schema");
