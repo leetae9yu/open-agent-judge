@@ -1620,7 +1620,8 @@ describe("local patch runner", () => {
   it("runs official HumanEval test-source descriptors through the fixed private oracle path", async () => {
     const problem = getHumanEvalProblem("humaneval-full-000");
     assert.ok(problem);
-    const [task] = await fetchPinnedHumanEvalTasks();
+    const tasks = await fetchPinnedHumanEvalTasks();
+    const task = tasks[0];
     const descriptor = officialHumanEvalDescriptor(problem, task);
     const runtimeProblem: Problem = {
       ...problem,
@@ -1752,6 +1753,39 @@ describe("local patch runner", () => {
       });
       assert.equal(introspectionPassed.result.passFail, "pass");
       assert.equal(introspectionPassed.job.scoringStatus, "scored");
+      const tupleProblem = getHumanEvalProblem("humaneval-full-008");
+      const tupleTask = tasks[8];
+      assert.ok(tupleProblem);
+      const tupleDescriptor = officialHumanEvalDescriptor(tupleProblem, tupleTask);
+      process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON = tupleDescriptor;
+      const tupleRuntimeProblem: Problem = {
+        ...tupleProblem,
+        oracleMetadata: { ...tupleProblem.oracleMetadata!, oracleDescriptorHash: `sha256:${sha256(tupleDescriptor)}` },
+      };
+      const tuplePatch = [
+        "diff --git a/solution.py b/solution.py",
+        "--- a/solution.py",
+        "+++ b/solution.py",
+        "@@ -0,0 +1,7 @@",
+        "+def sum_product(numbers):",
+        "+    total = 0",
+        "+    product = 1",
+        "+    for number in numbers:",
+        "+        total += number",
+        "+        product *= number",
+        "+    return total, product",
+        "",
+      ].join("\n");
+      const tuplePassed = runHiddenOraclePatchVerification({
+        benchmark: HUMANEVAL_BENCHMARK,
+        adapter: HUMANEVAL_ADAPTER,
+        problem: tupleRuntimeProblem,
+        submission: createPatchSubmission(tupleRuntimeProblem, "official-hidden-tuple-pass"),
+        patch: tuplePatch,
+        fixtureDir,
+      });
+      assert.equal(tuplePassed.result.passFail, "pass");
+      assert.equal(tuplePassed.job.scoringStatus, "scored");
     } finally {
       if (previousJson === undefined) {
         delete process.env.AGENTOJ_PRIVATE_ORACLE_DESCRIPTOR_JSON;

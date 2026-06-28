@@ -797,6 +797,22 @@ function isolatedCandidateChildSource(): string {
   ].join("\n");
 }
 
+function isolatedCandidateReprChildSource(): string {
+  return [
+    "import ast, importlib.util, pathlib, sys",
+    "solution_path = pathlib.Path(sys.argv[1])",
+    "entry_point = sys.argv[2]",
+    "args = ast.literal_eval(sys.stdin.read())",
+    "spec = importlib.util.spec_from_file_location('submitted_solution', solution_path)",
+    "module = importlib.util.module_from_spec(spec)",
+    "assert spec and spec.loader",
+    "spec.loader.exec_module(module)",
+    "if not entry_point.isidentifier(): raise ValueError('invalid entry point')",
+    "result = getattr(module, entry_point)(*args)",
+    "sys.stdout.write(repr(result))",
+  ].join("\n");
+}
+
 function solutionHarnessSource(): string {
   return [
     "import json, pathlib, subprocess, sys",
@@ -815,7 +831,7 @@ function solutionHarnessSource(): string {
 
 function officialTestHarnessSource(): string {
   return [
-    "import hashlib, json, pathlib, subprocess, sys",
+    "import ast, hashlib, json, pathlib, subprocess, sys",
     "payload = json.loads(sys.stdin.read())",
     "test_source = payload['s']",
     "expected_hash = payload['h']",
@@ -826,9 +842,9 @@ function officialTestHarnessSource(): string {
     "if not entry_point.isidentifier(): raise ValueError('invalid entry point')",
     "child_source = payload['c']",
     "def candidate(*args):",
-    "    completed = subprocess.run([sys.executable, '-I', '-c', child_source, str(solution_path), entry_point], input=json.dumps({'args': args}), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)",
+    "    completed = subprocess.run([sys.executable, '-I', '-c', child_source, str(solution_path), entry_point], input=repr(args), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)",
     "    if completed.returncode != 0: raise AssertionError('candidate subprocess failed')",
-    "    return json.loads(completed.stdout)['result']",
+    "    return ast.literal_eval(completed.stdout)",
     "namespace = {}",
     "exec(test_source, namespace)",
     "check = namespace.get('check')",
@@ -840,7 +856,7 @@ function officialTestHarnessSource(): string {
 }
 
 function officialTestPayload(testSource: string, testSourceHash: string, entryPoint: string, sentinel: string): string {
-  return JSON.stringify({ e: entryPoint, s: testSource, h: testSourceHash, n: sentinel, c: isolatedCandidateChildSource() });
+  return JSON.stringify({ e: entryPoint, s: testSource, h: testSourceHash, n: sentinel, c: isolatedCandidateReprChildSource() });
 }
 function commandHiddenHarnessSource(): string {
   return [
