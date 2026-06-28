@@ -1,0 +1,28 @@
+diff --git a/solution.py b/solution.py
+--- a/solution.py
++++ b/solution.py
+@@ -0,0 +1,24 @@
++from typing import List
++
++
++def separate_paren_groups(paren_string: str) -> List[str]:
++    groups = []
++    current = []
++    depth = 0
++
++    for char in paren_string:
++        if char == " ":
++            continue
++
++        if char == "(":
++            if depth == 0:
++                current = []
++            current.append(char)
++            depth += 1
++        elif char == ")":
++            current.append(char)
++            depth -= 1
++            if depth == 0:
++                groups.append("".join(current))
++
++    return groups
