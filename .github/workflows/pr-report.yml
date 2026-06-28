@@ -151,7 +151,6 @@ jobs:
 
       - name: Comment sanitized result on PR
         if: ${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.pull_requests[0].number }}
-        continue-on-error: true
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
         with:
           script: |
@@ -171,4 +170,12 @@ jobs:
               `Patch stats: ${Number(summary.patchStats.filesChanged)} files, +${Number(summary.patchStats.locAdded)}/-${Number(summary.patchStats.locDeleted)}`,
               ...summary.validationMessages.map((message) => `- ${escapeMarkdown(message)}`),
             ].join('\n');
-            await github.rest.issues.createComment({ ...context.repo, issue_number: pr, body });
+            try {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: pr, body });
+            } catch (error) {
+              if (error?.status === 403 || error?.status === 404) {
+                core.info(`PR comment skipped: GitHub token cannot write to issue ${pr} in this workflow context.`);
+                return;
+              }
+              throw error;
+            }

@@ -180,7 +180,10 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.match(report, /validateSanitizedPrJudgeSummary/);
     assert.match(report, /escapeMarkdown/);
     assert.match(report, /validationMessages\.map\(\(message\) => `- \$\{escapeMarkdown\(message\)\}`\)/);
-    assert.match(report, /continue-on-error: true/);
+    assert.doesNotMatch(report, /continue-on-error: true/);
+    assert.match(report, /try \{/);
+    assert.match(report, /error\?\.status === 403 \|\| error\?\.status === 404/);
+    assert.match(report, /PR comment skipped: GitHub token cannot write/);
     assert.match(report, /actions\/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e/);
     assert.match(report, /Publish passed result to static leaderboard/);
     assert.match(report, /web\/data\/leaderboard\.json/);
