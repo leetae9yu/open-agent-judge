@@ -1,0 +1,8 @@
+diff --git a/solution.py b/solution.py
+--- a/solution.py
++++ b/solution.py
+@@ -0,0 +1,4 @@
++import heapq as hq
++def heap_queue_largest(nums,n):
++  largest_nums = hq.nlargest(n, nums)
++  return largest_nums
