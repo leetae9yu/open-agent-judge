@@ -1,5 +1,16 @@
 [
   {
+    "id": "sha256:05ae817cb7dc44c8aa359750527a8ad130fdce62b367fa17722ebade82ef3310",
+    "problemId": "mbpp-full-004",
+    "submissionId": "oaj-opencode-deepseek-mbpp-full-004-a4cbe914",
+    "passFail": "pass",
+    "runtimeMs": 0,
+    "filesChanged": 1,
+    "locAdded": 4,
+    "locDeleted": 0,
+    "eligibilityStatus": "eligible"
+  },
+  {
     "id": "sha256:1758c9f1a3622ea141a3f791d0c2d93ebf0d439484eee2e1c92969b7c16f7772",
     "problemId": "mbpp-full-009",
     "submissionId": "oaj-opencode-deepseek-mbpp-full-009-02e18358",
