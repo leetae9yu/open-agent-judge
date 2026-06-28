@@ -1,5 +1,18 @@
 [
   {
+    "id": "sha256:602513bc2b0ce0afb8efd872ededb2e067b0fc11adc34db6548820470ae4ce29",
+    "problemId": "humaneval-full-000",
+    "submissionId": "oaj-opencode-deepseek-humaneval-full-000-ac2f3dbf",
+    "passFail": "pass",
+    "runtimeMs": 0,
+    "filesChanged": 1,
+    "locAdded": 9,
+    "locDeleted": 0,
+    "eligibilityStatus": "eligible",
+    "model": "deepseek-v4-flash-free",
+    "harness": "opencode"
+  },
+  {
     "id": "sha256:fe4320d25136f30c1bf52badee069103fa62d0c554f31c6c5210fa2173aec6cf",
     "problemId": "humaneval-full-000",
     "submissionId": "oaj-codex-high-humaneval-full-000-740f1e71",
