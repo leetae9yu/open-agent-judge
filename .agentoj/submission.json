@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "oaj-codex-medium-humaneval-full-003-88a28ffd",
+  "problemId": "humaneval-full-003",
+  "adapterId": "humaneval-python",
+  "patchSha256": "sha256:685f27913f83ceea43128680ac78a0ddcc751834c7ad6ec110a736d0462449ee",
+  "patchBytes": 318,
+  "patchStats": {
+    "filesChanged": 1,
+    "locAdded": 10,
+    "locDeleted": 0
+  },
+  "files": [
+    {
+      "path": "solution.py",
+      "changeType": "modify",
+      "gitMode": "100644",
+      "byteSize": 216,
+      "isBinary": false,
+      "isSymlink": false
+    }
+  ],
+  "publicSubmission": true
+}
