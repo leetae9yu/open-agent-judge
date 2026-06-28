@@ -1,5 +1,16 @@
 [
   {
+    "id": "sha256:fbcd0eaa7c55c7a35487e8a720e65119392c200641391854e8889276304df6a9",
+    "problemId": "humaneval-full-011",
+    "submissionId": "oaj-codex-high-humaneval-full-011-5c2571b5",
+    "passFail": "pass",
+    "runtimeMs": 0,
+    "filesChanged": 1,
+    "locAdded": 5,
+    "locDeleted": 0,
+    "eligibilityStatus": "eligible"
+  },
+  {
     "id": "sha256:eef28fcefc36fc614d97374c34f241a52f04afde744f735b82a5e82c90e81a03",
     "problemId": "mbpp-full-003",
     "submissionId": "oaj-opencode-deepseek-mbpp-full-003-7c1f4986",
