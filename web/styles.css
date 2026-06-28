@@ -191,8 +191,8 @@ a:hover {
 .col-no { width: 60px; }
 .col-source { width: 110px; }
 .col-mode { width: 100px; }
-.col-rank { width: 60px; text-align: center; }
-.col-status { width: 180px; }
+.col-problem-id { width: 150px; }
+.col-status { width: 90px; text-align: center; }
 .col-runtime { width: 100px; text-align: right; }
 .col-loc { width: 90px; text-align: right; }
 .col-problem { width: auto; }
@@ -304,10 +304,10 @@ a:hover {
   font-size: 0.78rem;
 }
 
-.rank-no {
-  text-align: center;
-  font-weight: 700;
+.rank-problem-id {
   color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 0.82rem;
 }
 
 .rank-problem {

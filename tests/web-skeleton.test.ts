@@ -193,6 +193,7 @@ describe("web UI skeleton", () => {
     assert.match(html, /humaneval-full-008/);
     assert.match(html, /1\.23 s/);
     assert.match(html, /\+2\/-0/);
+    assert.doesNotMatch(readFileSync("web/index.html", "utf8"), />Rank</);
   });
 
   it("rejects unsafe api query origins without persisting them", async () => {

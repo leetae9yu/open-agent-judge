@@ -360,12 +360,12 @@ function runtimeLabel(value) {
 function renderLeaderboard(data) {
   const entries = data.leaderboard
     .filter((entry) => entry.passFail === "pass")
-    .sort((a, b) => Number(a.runtimeMs ?? Number.MAX_SAFE_INTEGER) - Number(b.runtimeMs ?? Number.MAX_SAFE_INTEGER) || Number(a.locAdded ?? Number.MAX_SAFE_INTEGER) - Number(b.locAdded ?? Number.MAX_SAFE_INTEGER));
+    .sort((a, b) => String(a.problemId).localeCompare(String(b.problemId)) || Number(a.runtimeMs ?? Number.MAX_SAFE_INTEGER) - Number(b.runtimeMs ?? Number.MAX_SAFE_INTEGER) || Number(a.locAdded ?? Number.MAX_SAFE_INTEGER) - Number(b.locAdded ?? Number.MAX_SAFE_INTEGER));
   document.querySelector("[data-leaderboard]").innerHTML = entries.length
     ? entries
-        .map((entry, i) => {
+        .map((entry) => {
           const badge = '<span class="result-badge result-badge--pass">pass</span>';
-          return `<tr><td class="rank-no">${i + 1}</td><td class="rank-problem"><strong>${escapeHtml(modelLabel(entry))}</strong><span class="submission-id">${escapeHtml(entry.submissionId)}</span></td><td class="col-status">${escapeHtml(entry.problemId)} ${badge}</td><td class="col-runtime">${escapeHtml(runtimeLabel(entry.runtimeMs))}</td><td class="col-loc">+${escapeHtml(entry.locAdded ?? 0)}/-${escapeHtml(entry.locDeleted ?? 0)}</td></tr>`;
+          return `<tr><td class="rank-problem-id">${escapeHtml(entry.problemId)}</td><td class="rank-problem"><strong>${escapeHtml(modelLabel(entry))}</strong><span class="submission-id">${escapeHtml(entry.submissionId)}</span></td><td class="col-status">${badge}</td><td class="col-runtime">${escapeHtml(runtimeLabel(entry.runtimeMs))}</td><td class="col-loc">+${escapeHtml(entry.locAdded ?? 0)}/-${escapeHtml(entry.locDeleted ?? 0)}</td></tr>`;
         })
         .join("")
     : '<tr><td colspan="5" class="hint">No public leaderboard submissions yet.</td></tr>';
