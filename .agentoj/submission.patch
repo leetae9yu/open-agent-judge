@@ -1,0 +1,6 @@
+diff --git a/solution.py b/solution.py
+--- a/solution.py
++++ b/solution.py
+@@ -0,0 +1,2 @@
++def truncate_number(number: float) -> float:
++    return number - int(number)
