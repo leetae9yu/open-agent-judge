@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "oaj-opencode-deepseek-humaneval-full-000-ac2f3dbf",
+  "problemId": "humaneval-full-000",
+  "adapterId": "humaneval-python",
+  "patchSha256": "sha256:fd372cd84a2f74dcfa75b91e6b6ddc44a24a1b5f0a72b17035d8069245a1d173",
+  "patchBytes": 379,
+  "patchStats": {
+    "filesChanged": 1,
+    "locAdded": 9,
+    "locDeleted": 0
+  },
+  "files": [
+    {
+      "path": "solution.py",
+      "changeType": "modify",
+      "gitMode": "100644",
+      "byteSize": 279,
+      "isBinary": false,
+      "isSymlink": false
+    }
+  ],
+  "publicSubmission": true
+}
