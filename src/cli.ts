@@ -541,6 +541,29 @@ export function runCli(args = process.argv.slice(2)): CliRunResult {
         issues: Array.from(new Set(issueCodes)),
       };
     }
+    if (executionTrigger === "pull_request" && catalogEntry.problem.scoringMode === "scored-hidden" && privateOracleDescriptorJson() === null) {
+      const summary = createJudgeSummary({
+        submissionId: envelope.id,
+        problemId: catalogEntry.problem.id,
+        adapterId: catalogEntry.adapter.id,
+        prHeadSha: summaryPrHeadSha,
+        status: "invalid",
+        patchStats,
+        messages: ["maintainer.hiddenScoringRequired: Public PR envelope accepted; trusted maintainer scoring is required for hidden-oracle results."],
+        resultSeed: `pending-maintainer-scoring:${summaryPrHeadSha}:${actualPatchSha256}`,
+      });
+      const writtenSummary = validateAndWriteJudgeSummary(summaryOut, summary, { ...judgeOptions, benchmarkId: catalogEntry.benchmark.id });
+      return {
+        ok: true,
+        problemId: catalogEntry.problem.id,
+        patchBytes: actualPatchBytes,
+        runnerStatus: "invalid",
+        runnerResultHash: writtenSummary.resultHash,
+        summaryPath: summaryOut,
+        judgeSummary: writtenSummary,
+        issues: ["maintainer.hiddenScoringRequired"],
+      };
+    }
 
     try {
       const { benchmark, adapter } = catalogEntry;
