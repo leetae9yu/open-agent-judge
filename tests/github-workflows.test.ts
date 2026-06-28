@@ -230,7 +230,8 @@ describe("GitHub Actions PR judge trust boundaries", () => {
     assert.match(pages, /environment:\n      name: github-pages/);
     assert.match(pages, /if: \$\{\{ github\.ref == 'refs\/heads\/main' \}\}/);
     assert.match(pages, /ref: main/);
-    assert.match(pages, /export-web-data --out web\/data/);
+    assert.match(pages, /Validate committed static public data/);
+    assert.doesNotMatch(pages, /export-web-data --out web\/data/);
     assertPinnedActions(pages);
   });
 

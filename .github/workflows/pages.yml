@@ -45,8 +45,15 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Rebuild static web data from trusted records
-        run: node --experimental-strip-types src/cli.ts export-web-data --out web/data
+      - name: Validate committed static public data
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          for (const file of ['problems.json', 'leaderboard.json', 'recordings.json', 'memory.json', 'registry.json']) {
+            const parsed = JSON.parse(readFileSync(`web/data/${file}`, 'utf8'));
+            if (!Array.isArray(parsed)) throw new Error(`${file} must be a public array`);
+          }
+          NODE
 
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
