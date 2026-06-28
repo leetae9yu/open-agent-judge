@@ -1,5 +1,19 @@
 [
   {
+    "id": "sha256:d21121dacc3de174e20d66e8c5f28f0fab61d8529b2fe8b7b9077104e4248055",
+    "problemId": "humaneval-full-000",
+    "submissionId": "oaj-codex-medium-humaneval-full-000-740f1e71",
+    "passFail": "pass",
+    "runtimeMs": 0,
+    "filesChanged": 1,
+    "locAdded": 9,
+    "locDeleted": 0,
+    "eligibilityStatus": "eligible",
+    "model": "gpt-5.5",
+    "harness": "Codex CLI",
+    "reasoningEffort": "medium"
+  },
+  {
     "id": "sha256:e4f1c8e993f6327198fdf7439de05a9a0c0fb833e2a0b16a68a1b60cf85d5d40",
     "problemId": "humaneval-full-008",
     "submissionId": "oaj-codex-high-humaneval-full-008-2f994985",
