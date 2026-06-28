@@ -1,5 +1,16 @@
 [
   {
+    "id": "sha256:339e67323cd99f5df8d3905899d59fdb6eb8ad5fcc2bca02989fe07e2eb576ca",
+    "problemId": "humaneval-full-001",
+    "submissionId": "oaj-codex-low-humaneval-full-001-cccd8bd5",
+    "passFail": "pass",
+    "runtimeMs": 0,
+    "filesChanged": 1,
+    "locAdded": 25,
+    "locDeleted": 0,
+    "eligibilityStatus": "eligible"
+  },
+  {
     "id": "sha256:d42974155e42b706ed89d78a0759ea3a5eb6fe022b7fa0df4b4d8e9bb59e4b78",
     "problemId": "humaneval-full-002",
     "submissionId": "oaj-codex-low-humaneval-full-002-7bfdf017",
