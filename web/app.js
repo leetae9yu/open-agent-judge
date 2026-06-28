@@ -350,6 +350,12 @@ function modelLabel(entry) {
   return "No runner note";
 }
 
+function solverLink(entry) {
+  const solver = String(entry.solver || "");
+  if (!/^[A-Za-z0-9-]{1,39}$/.test(solver)) return escapeHtml(solverLabel(entry));
+  return `<a href="https://github.com/${escapeHtml(solver)}" target="_blank" rel="noopener noreferrer">${escapeHtml(solverLabel(entry))}</a>`;
+}
+
 function runtimeLabel(value) {
   const runtime = Number(value);
   if (!Number.isFinite(runtime)) return "n/a";
@@ -369,16 +375,30 @@ function evidenceLinks(entry) {
   return links.length ? links.join("<br>") : "verified";
 }
 
+function renderLeaderboardProblems(data, entries, selectedProblemId) {
+  const counts = entries.reduce((map, entry) => map.set(entry.problemId, (map.get(entry.problemId) ?? 0) + 1), new Map());
+  document.querySelector("[data-leaderboard-problems]").innerHTML = [...counts.entries()]
+    .sort(([a], [b]) => String(a).localeCompare(String(b)))
+    .map(([problemId, count]) => `<button class="problem-filter__button ${problemId === selectedProblemId ? "active" : ""}" data-leaderboard-problem="${escapeHtml(problemId)}">${escapeHtml(problemId)} <span>${escapeHtml(count)}</span></button>`)
+    .join("");
+}
+
+
 
 function renderLeaderboard(data) {
-  const entries = data.leaderboard
+  const allEntries = data.leaderboard
     .filter((entry) => entry.passFail === "pass")
     .sort((a, b) => String(a.problemId).localeCompare(String(b.problemId)) || Number(a.runtimeMs ?? Number.MAX_SAFE_INTEGER) - Number(b.runtimeMs ?? Number.MAX_SAFE_INTEGER) || Number(a.locAdded ?? Number.MAX_SAFE_INTEGER) - Number(b.locAdded ?? Number.MAX_SAFE_INTEGER));
+  const selectedProblemId = data.selectedLeaderboardProblem && allEntries.some((entry) => entry.problemId === data.selectedLeaderboardProblem)
+    ? data.selectedLeaderboardProblem
+    : allEntries[0]?.problemId;
+  renderLeaderboardProblems(data, allEntries, selectedProblemId);
+  const entries = allEntries.filter((entry) => entry.problemId === selectedProblemId);
   document.querySelector("[data-leaderboard]").innerHTML = entries.length
     ? entries
         .map((entry) => {
           const badge = '<span class="result-badge result-badge--pass">pass</span>';
-          return `<tr><td class="rank-problem-id">${escapeHtml(entry.problemId)}</td><td class="col-solver"><strong>${escapeHtml(solverLabel(entry))}</strong></td><td class="rank-problem"><strong>${escapeHtml(modelLabel(entry))}</strong><span class="submission-id">${escapeHtml(entry.submissionId)}</span></td><td class="col-status">${badge}</td><td class="col-runtime">${escapeHtml(runtimeLabel(entry.runtimeMs))}</td><td class="col-loc">+${escapeHtml(entry.locAdded ?? 0)}/-${escapeHtml(entry.locDeleted ?? 0)}</td><td class="col-evidence">${evidenceLinks(entry)}</td></tr>`;
+          return `<tr><td class="rank-problem-id">${escapeHtml(entry.problemId)}</td><td class="col-solver"><strong>${solverLink(entry)}</strong></td><td class="rank-problem"><strong>${escapeHtml(modelLabel(entry))}</strong><span class="submission-id">${escapeHtml(entry.submissionId)}</span></td><td class="col-status">${badge}</td><td class="col-runtime">${escapeHtml(runtimeLabel(entry.runtimeMs))}</td><td class="col-loc">+${escapeHtml(entry.locAdded ?? 0)}/-${escapeHtml(entry.locDeleted ?? 0)}</td><td class="col-evidence">${evidenceLinks(entry)}</td></tr>`;
         })
         .join("")
     : '<tr><td colspan="7" class="hint">No public leaderboard submissions yet.</td></tr>';
@@ -485,6 +505,15 @@ function wireNav() {
         detail.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
+  });
+
+  document.querySelector("[data-leaderboard-problems]")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-leaderboard-problem]");
+    if (!button) return;
+    const data = window.__agentojData;
+    if (!data) return;
+    data.selectedLeaderboardProblem = button.dataset.leaderboardProblem;
+    renderLeaderboard(data);
   });
 }
 
@@ -605,7 +634,7 @@ function renderLoadError(error) {
   window.__agentojData = { ...fallbackData, source: "static-error", loadError: safeMessage };
   for (const selector of ["[data-problem-list]", "[data-leaderboard]"]) {
     const el = document.querySelector(selector);
-    if (el) el.innerHTML = `<tr><td colspan="5" class="hint">Could not load public data: ${safeMessage}</td></tr>`;
+    if (el) el.innerHTML = `<tr><td colspan="7" class="hint">Could not load public data: ${safeMessage}</td></tr>`;
   }
   for (const selector of ["[data-problem-detail]", "[data-submission-result]", "[data-discussion]", "[data-memory-search]"]) {
     const el = document.querySelector(selector);

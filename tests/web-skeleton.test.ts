@@ -188,6 +188,19 @@ describe("web UI skeleton", () => {
             evidenceRunId: 1234,
             evidenceRunUrl: "https://github.com/leetae9yu/open-agent-judge/actions/runs/1234",
           },
+          {
+            id: "sha256:" + "b".repeat(64),
+            problemId: "humaneval-full-009",
+            submissionId: "oaj-codex-high-humaneval-full-009-10ca60fd",
+            passFail: "pass",
+            runtimeMs: 999,
+            locAdded: 13,
+            locDeleted: 0,
+            eligibilityStatus: "eligible",
+            solver: "octocat",
+            prNumber: 43,
+            prUrl: "https://github.com/leetae9yu/open-agent-judge/pull/43",
+          },
         ],
       }),
     );
@@ -201,6 +214,10 @@ describe("web UI skeleton", () => {
     assert.match(html, /humaneval-full-008/);
     assert.match(html, /1\.23 s/);
     assert.match(html, /\+2\/-0/);
+    assert.doesNotMatch(html, /humaneval-full-009/);
+    assert.match(run.elements.get("[data-leaderboard-problems]")!.innerHTML, /humaneval-full-008/);
+    assert.match(run.elements.get("[data-leaderboard-problems]")!.innerHTML, /humaneval-full-009/);
+    assert.match(html, /https:\/\/github\.com\/octocat/);
     assert.doesNotMatch(readFileSync("web/index.html", "utf8"), />Rank</);
   });
 

@@ -199,6 +199,35 @@ a:hover {
 .col-evidence { width: 120px; }
 .col-problem { width: auto; }
 
+.problem-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.problem-filter__button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  padding: 7px 11px;
+  font-weight: 700;
+}
+
+.problem-filter__button.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.problem-filter__button span {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  margin-left: 4px;
+}
+
 .problem-no {
   color: var(--text-dim);
   font-size: 0.85rem;
