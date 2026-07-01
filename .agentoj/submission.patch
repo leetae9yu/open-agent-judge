@@ -1,0 +1,14 @@
+diff --git a/solution.py b/solution.py
+--- a/solution.py
++++ b/solution.py
+@@ -0,0 +1,10 @@
++from typing import List, Tuple
++
++
++def sum_product(numbers: List[int]) -> Tuple[int, int]:
++    total = 0
++    product = 1
++    for number in numbers:
++        total += number
++        product *= number
++    return total, product
