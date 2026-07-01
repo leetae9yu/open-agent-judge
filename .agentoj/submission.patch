@@ -1,0 +1,16 @@
+diff --git a/solution.py b/solution.py
+--- a/solution.py
++++ b/solution.py
+@@ -0,0 +1,12 @@
++from typing import List
++
++
++def intersperse(numbers: List[int], delimeter: int) -> List[int]:
++    if not numbers:
++        return []
++
++    result = [numbers[0]]
++    for number in numbers[1:]:
++        result.append(delimeter)
++        result.append(number)
++    return result
