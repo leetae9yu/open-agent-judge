@@ -1,0 +1,6 @@
+diff --git a/solution.py b/solution.py
+--- a/solution.py
++++ b/solution.py
+@@ -0,0 +1,2 @@
++def square_nums(nums):
++    return list(map(lambda x: x ** 2, nums))
