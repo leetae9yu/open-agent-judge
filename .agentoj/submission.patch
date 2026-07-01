@@ -1,0 +1,9 @@
+diff --git a/solution.py b/solution.py
+--- a/solution.py
++++ b/solution.py
+@@ -0,0 +1,5 @@
++from typing import List
++
++
++def filter_by_substring(strings: List[str], substring: str) -> List[str]:
++    return [s for s in strings if substring in s]
