@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "oaj-opencode-deepseek-mbpp-full-003-7c1f4986",
+  "problemId": "mbpp-full-003",
+  "adapterId": "mbpp-python",
+  "patchSha256": "sha256:49ebe8e2c4eaeb494dc9041466c7a8c1ce7e9a8f3129d3d53c2e7761f67e74e7",
+  "patchBytes": 279,
+  "patchStats": {
+    "filesChanged": 1,
+    "locAdded": 9,
+    "locDeleted": 0
+  },
+  "files": [
+    {
+      "path": "solution.py",
+      "changeType": "modify",
+      "gitMode": "100644",
+      "byteSize": 179,
+      "isBinary": false,
+      "isSymlink": false
+    }
+  ],
+  "publicSubmission": true
+}
